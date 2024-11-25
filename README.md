@@ -3,7 +3,7 @@
 **写在前面：代码结构部分参考了网络教程以及开源项目，由于本人真的是从零开始学app开发，可能存在一些bug敬请见谅**
 
 开发工具：AndroidStudio+Copilot
-项目版本：API26+GroovyDSL+gradle=8.7
+项目版本：API26+GroovyDSL+gradle=8.5
 
 主要依赖：
 1. Hilt: 用于依赖注入
@@ -37,7 +37,7 @@
 
 4. 本地存储功能：
 
-   使用 Room 数据库存储用户信息
+   使用 Room 数据库存储用户信息 -> DatabaseModule.kt
 
    实现用户注册和登录功能
 
@@ -47,6 +47,8 @@
 
    使用 Hilt 进行依赖注入
 
-   
+   添加了admin作为默认用户
+
+   密码输入隐藏
 
 5. 
