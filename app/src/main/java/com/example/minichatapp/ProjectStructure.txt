@@ -1,0 +1,31 @@
+main
+ └── java
+      └── com.example.minichatapp
+           ├── data
+           │    ├── local
+           │    │    ├── AppDatabase
+           │    │    └── UserDao
+           │    └── repository
+           │         └── UserRepository
+           ├── di
+           │    └── DatabaseModule
+           ├── domain.model
+           │    └── User
+           ├── ui
+           │    ├── components
+           │    │    └── CommonComponents.kt
+           │    ├── screens
+           │    │    ├── auth
+           │    │    │    ├── AuthViewModel
+           │    │    │    ├── LoginScreen.kt
+           │    │    │    └── RegisterScreen.kt
+           │    │    ├── chat
+           │    │    ├── contact
+           │    │    └── MainScreen.kt
+           │    └── theme
+           │         ├── Color.kt
+           │         ├── Theme.kt
+           │         └── Type.kt
+           ├── Navigation.kt
+           ├── MainActivity
+           └── ProjectStructure.txt
