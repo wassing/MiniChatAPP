@@ -13,7 +13,48 @@
 
 项目结构：
 
-
+```
+main
+ └── java
+      └── com.example.minichatapp
+           ├── data
+           │    ├── local
+           │    │    ├── AppDatabase.kt
+           │    │    ├── AppSettings.kt
+           │    │    └── UserDao.kt
+           │    ├── remote
+           │    │    └── ChatService.kt
+           │    └── repository
+           │         └── UserRepository.kt
+           ├── di
+           │    └── DatabaseModule.kt
+           ├── domain.model
+           │    ├── ChatMessage.kt
+           │    └── User.kt
+           ├── ui
+           │    ├── components
+           │    │    └── CommonComponents.kt
+           │    ├── screens
+           │    │    ├── auth
+           │    │    │    ├── AuthViewModel
+           │    │    │    ├── LoginScreen.kt
+           │    │    │    └── RegisterScreen.kt
+           │    │    ├── chat
+           │    │    │    ├── ChatScreen.kt
+           │    │    │    └── ChatMessageItem.kt
+           │    │    ├── contact
+           │    │    ├── settings
+           │    │    │    ├── SettingsScreen.kt
+           │    │    │    └── SettingsViewModel.kt
+           │    │    └── MainScreen.kt
+           │    ├── theme
+           │    │     ├── Color.kt
+           │    │     ├── Theme.kt
+           │    │     └── Type.kt
+           │    └── Navigation.kt
+           ├── MainActivity.kt
+           └── ProjectStructure.txt
+```
 
 ## TodoList:
 
@@ -85,3 +126,4 @@ WebSocket连接框架
 3. NetworkModule.kt：网络模块
 4. 为了调试，在AndroidManifest.xml中启用了明文传输，否则必须要https的url才能正常进入聊天室，记得在正式发布前删掉
 
+![image-20241126183644569](E:\SLife\Codes\MiniChatAPP\assets\image-20241126183644569.png)
