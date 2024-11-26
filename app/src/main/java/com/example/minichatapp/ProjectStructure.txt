@@ -5,11 +5,14 @@ main
            │    ├── local
            │    │    ├── AppDatabase
            │    │    └── UserDao
+           │    ├── remote
+           │    │    └── ChatService.kt
            │    └── repository
            │         └── UserRepository
            ├── di
            │    └── DatabaseModule
            ├── domain.model
+           │    ├── ChatMessage
            │    └── User
            ├── ui
            │    ├── components
@@ -20,12 +23,14 @@ main
            │    │    │    ├── LoginScreen.kt
            │    │    │    └── RegisterScreen.kt
            │    │    ├── chat
+           │    │    │    ├── ChatScreen.kt
+           │    │    │    └── ChatMessageItem.kt
            │    │    ├── contact
-           │    │    └── MainScreen.kt
-           │    └── theme
-           │         ├── Color.kt
-           │         ├── Theme.kt
-           │         └── Type.kt
-           ├── Navigation.kt
-           ├── MainActivity
+           │    │    ├── MainScreen.kt
+           │    ├── theme
+           │    │     ├── Color.kt
+           │    │     ├── Theme.kt
+           │    │     └── Type.kt
+           │    └── Navigation.kt
+           ├── MainActivity.kt
            └── ProjectStructure.txt

@@ -24,6 +24,7 @@
 ## 登录&注册模块
 
 1. 登录界面：包含用户名和密码输入框，以及登录和注册按钮
+   <img src="E:\SLife\Codes\MiniChatAPP\assets\image-20241125170652798.png" alt="image-20241125170652798"  />
 
 2. 注册界面：包含用户名、密码和确认密码，以及一些输入验证：
 
@@ -32,6 +33,7 @@
    密码至少6个字符
 
    确认两次密码是否一致
+   ![image-20241125170722071](E:\SLife\Codes\MiniChatAPP\assets\image-20241125170722071.png)
 
 3. 改进了加载状态显示，添加了错误信息提示，改进了视觉样式，有简单的输入验证
 
@@ -49,6 +51,34 @@
 
    添加了admin作为默认用户
 
-   密码输入隐藏
+   密码输入隐藏（使用OutlinedTextField的visualTransformation）
 
-5. 
+## 聊天列表界面
+
+以后可能添加聊天列表+联系人功能
+
+1. ChatScreen.kt实现消息界面
+2. 显示用户名和消息发送时间
+
+![image-20241125181830516](E:\SLife\Codes\MiniChatAPP\assets\image-20241125181830516.png)
+
+## 消息同步功能
+
+WebSocket连接框架
+
+### WebSocket服务器端
+
+1. WebSocket连接管理：使用ConcurrentHashMap管理所有活动的WebSocket会话，通过URL参数识别用户身份
+2. 消息处理：支持文本消息的接收和广播
+3. 系统消息：在用户加入/离开时发送系统通知，支持消息类型区分（文本/图片）
+
+
+
+
+
+### WebSocket客户端
+
+1. ChatService.lt：WebSocket客户端服务管理
+2. ChatViewModel：管理聊天状态
+3. NetworkModule.kt：网络模块
+

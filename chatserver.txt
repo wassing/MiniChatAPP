@@ -1,0 +1,148 @@
+// src/main/java/com/example/chatserver/ChatServerApplication.java
+package com.example.chatserver;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class ChatServerApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(ChatServerApplication.class, args);
+    }
+}
+
+
+// src/main/java/com/example/chatserver/model/ChatMessage.java
+package com.example.chatserver.model;
+
+import lombok.Data;
+import java.time.Instant;
+
+@Data
+public class ChatMessage {
+    private String id;
+    private String senderId;
+    private String content;
+    private long timestamp;
+    private MessageType type;
+
+    public enum MessageType {
+        TEXT,
+        IMAGE
+    }
+
+    public ChatMessage() {
+        this.id = String.valueOf(System.currentTimeMillis());
+        this.timestamp = Instant.now().toEpochMilli();
+    }
+}
+
+
+// src/main/java/com/example/chatserver/handler/ChatWebSocketHandler.java
+package com.example.chatserver.handler;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.stereotype.Component;
+import org.springframework.web.socket.CloseStatus;
+import org.springframework.web.socket.TextMessage;
+import org.springframework.web.socket.WebSocketSession;
+import org.springframework.web.socket.handler.TextWebSocketHandler;
+import java.io.IOException;
+import java.util.concurrent.ConcurrentHashMap;
+import com.example.chatserver.model.ChatMessage;
+
+@Component
+public class ChatWebSocketHandler extends TextWebSocketHandler {
+
+    private final ConcurrentHashMap<String, WebSocketSession> sessions = new ConcurrentHashMap<>();
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Override
+    public void afterConnectionEstablished(WebSocketSession session) {
+        // 从URL参数中获取用户名
+        String username = extractUsername(session);
+        sessions.put(username, session);
+
+        // 广播用户加入消息
+        broadcastMessage(createSystemMessage(username + " 加入了聊天室"));
+    }
+
+    @Override
+    protected void handleTextMessage(WebSocketSession session, TextMessage message) {
+        try {
+            ChatMessage chatMessage = objectMapper.readValue(message.getPayload(), ChatMessage.class);
+            broadcastMessage(chatMessage);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
+        String username = extractUsername(session);
+        sessions.remove(username);
+
+        // 广播用户离开消息
+        broadcastMessage(createSystemMessage(username + " 离开了聊天室"));
+    }
+
+    private void broadcastMessage(ChatMessage message) {
+        try {
+            String messageJson = objectMapper.writeValueAsString(message);
+            TextMessage textMessage = new TextMessage(messageJson);
+
+            sessions.values().forEach(session -> {
+                try {
+                    if (session.isOpen()) {
+                        session.sendMessage(textMessage);
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private String extractUsername(WebSocketSession session) {
+        String query = session.getUri().getQuery();
+        if (query != null && query.startsWith("username=")) {
+            return query.substring(9); // "username=".length() == 9
+        }
+        return "anonymous-" + session.getId();
+    }
+
+    private ChatMessage createSystemMessage(String content) {
+        ChatMessage message = new ChatMessage();
+        message.setSenderId("System");
+        message.setContent(content);
+        message.setType(ChatMessage.MessageType.TEXT);
+        return message;
+    }
+}
+
+
+// src/main/java/com/example/chatserver/config/WebSocketConfig.java
+package com.example.chatserver.config;
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.socket.config.annotation.EnableWebSocket;
+import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
+import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
+import org.springframework.beans.factory.annotation.Autowired;
+import com.example.chatserver.handler.ChatWebSocketHandler;
+
+@Configuration
+@EnableWebSocket
+public class WebSocketConfig implements WebSocketConfigurer {
+
+    @Autowired
+    private ChatWebSocketHandler chatWebSocketHandler;
+
+    @Override
+    public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
+        registry.addHandler(chatWebSocketHandler, "/chat")
+                .setAllowedOrigins("*"); // 允许所有来源，生产环境建议限制
+    }
+}

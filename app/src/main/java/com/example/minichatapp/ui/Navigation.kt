@@ -1,10 +1,11 @@
 package com.example.minichatapp.ui
 
 import androidx.compose.runtime.Composable
-import androidx.navigation.NavController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.minichatapp.ui.screens.MainScreen
 import com.example.minichatapp.ui.screens.auth.LoginScreen
 import com.example.minichatapp.ui.screens.auth.RegisterScreen
@@ -12,11 +13,8 @@ import com.example.minichatapp.ui.screens.auth.RegisterScreen
 sealed class Screen(val route: String) {
     object Login : Screen("login")
     object Register : Screen("register")
-    object Main : Screen("main")
-    object ChatList : Screen("chats")
-    object Contacts : Screen("contacts")
-    object Chat : Screen("chat/{chatId}") {
-        fun createRoute(chatId: String) = "chat/$chatId"
+    object Main : Screen("main/{username}") {
+        fun createRoute(username: String) = "main/$username"
     }
 }
 
@@ -30,9 +28,8 @@ fun AppNavigation() {
     ) {
         composable(Screen.Login.route) {
             LoginScreen(
-                onLoginClick = { username, password ->
-                    // TODO: 处理登录逻辑
-                    navController.navigate(Screen.Main.route) {
+                onLoginClick = { username, _ ->
+                    navController.navigate(Screen.Main.createRoute(username)) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
                 },
@@ -45,8 +42,6 @@ fun AppNavigation() {
         composable(Screen.Register.route) {
             RegisterScreen(
                 onRegisterClick = { username, password, confirmPassword ->
-                    // TODO: 处理注册逻辑
-                    // 注册成功后返回登录界面
                     navController.popBackStack()
                 },
                 onBackToLogin = {
@@ -55,8 +50,12 @@ fun AppNavigation() {
             )
         }
 
-        composable(Screen.Main.route) {
-            MainScreen()
+        composable(
+            route = Screen.Main.route,
+            arguments = listOf(navArgument("username") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val username = backStackEntry.arguments?.getString("username") ?: ""
+            MainScreen(username = username)
         }
     }
 }
