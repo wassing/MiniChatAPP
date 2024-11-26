@@ -17,6 +17,9 @@ class ChatViewModel @Inject constructor(
     private val _messages = MutableStateFlow<List<ChatMessage>>(emptyList())
     val messages: StateFlow<List<ChatMessage>> = _messages
 
+    // 暴露ChatService的连接状态
+    val connectionState: StateFlow<ChatService.ConnectionState> = chatService.connectionState
+
     fun connectToChat(username: String) {
         chatService.connectToChat(username)
         viewModelScope.launch {

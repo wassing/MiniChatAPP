@@ -27,6 +27,7 @@ fun ChatScreen(
     messages: List<ChatMessage>,
     currentUsername: String,
     onSendMessage: (String) -> Unit,
+    isConnected: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val scope = rememberCoroutineScope()
@@ -84,11 +85,12 @@ fun ChatScreen(
                 OutlinedTextField(
                     value = messageText,
                     onValueChange = { messageText = it },
-                    placeholder = { Text("输入消息...") },
+                    placeholder = { Text(if (isConnected) "输入消息..." else "正在连接...") },
                     modifier = Modifier
                         .weight(1f)
                         .padding(end = 8.dp),
-                    singleLine = true
+                    singleLine = true,
+                    enabled = isConnected
                 )
 
                 IconButton(
@@ -97,12 +99,16 @@ fun ChatScreen(
                             onSendMessage(messageText)
                             messageText = ""
                         }
-                    }
+                    },
+                    enabled = isConnected && messageText.isNotBlank()
                 ) {
                     Icon(
                         Icons.Default.Send,
                         contentDescription = "发送",
-                        tint = MaterialTheme.colorScheme.primary
+                        tint = if (isConnected && messageText.isNotBlank())
+                            MaterialTheme.colorScheme.primary
+                        else
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                     )
                 }
             }
@@ -118,44 +124,60 @@ fun ChatMessageItem(
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
-        horizontalAlignment = if (isCurrentUser) Alignment.End else Alignment.Start
+        horizontalAlignment = if (message.senderId == "System") Alignment.CenterHorizontally
+        else if (isCurrentUser) Alignment.End else Alignment.Start
     ) {
-        // Sender info: username and time
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 4.dp),
-            horizontalArrangement = if (isCurrentUser) Arrangement.End else Arrangement.Start
-        ) {
-            Text(
-                text = "${message.senderId} · ${formatTimestamp(message.timestamp)}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
+        if (message.senderId == "System") {
+            // 系统消息样式
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
+            ) {
+                Text(
+                    text = message.content,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        } else {
+            // 用户消息样式
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 4.dp),
+                horizontalArrangement = if (isCurrentUser) Arrangement.End else Arrangement.Start
+            ) {
+                Text(
+                    text = "${message.senderId} · ${formatTimestamp(message.timestamp)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
 
-        // Message bubble
-        Box(
-            modifier = Modifier
-                .clip(
-                    RoundedCornerShape(
-                        topStart = 16.dp,
-                        topEnd = 16.dp,
-                        bottomStart = if (isCurrentUser) 16.dp else 4.dp,
-                        bottomEnd = if (isCurrentUser) 4.dp else 16.dp
+            Box(
+                modifier = Modifier
+                    .clip(
+                        RoundedCornerShape(
+                            topStart = 16.dp,
+                            topEnd = 16.dp,
+                            bottomStart = if (isCurrentUser) 16.dp else 4.dp,
+                            bottomEnd = if (isCurrentUser) 4.dp else 16.dp
+                        )
                     )
+                    .background(
+                        if (isCurrentUser) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.surfaceVariant
+                    )
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
+            ) {
+                Text(
+                    text = message.content,
+                    color = if (isCurrentUser) MaterialTheme.colorScheme.onPrimary
+                    else MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                .background(
-                    if (isCurrentUser) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.surfaceVariant
-                )
-                .padding(horizontal = 12.dp, vertical = 8.dp)
-        ) {
-            Text(
-                text = message.content,
-                color = if (isCurrentUser) MaterialTheme.colorScheme.onPrimary
-                else MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            }
         }
     }
 }

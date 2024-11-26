@@ -31,14 +31,22 @@ object DatabaseModule {
                 super.onCreate(db)
                 // 在数据库创建时添加默认用户
                 runBlocking {
-                    val database = AppDatabase::class.java.getMethod("getOpenHelper").invoke(null)
-                    val userDao = (database as AppDatabase).userDao()
+                    val database = Room.databaseBuilder(
+                        context,
+                        AppDatabase::class.java,
+                        "minichat.db"
+                    ).build()
+                    val userDao = database.userDao()
                     val defaultUser = User(
                         username = "admin",
                         password = "111",
                         createdAt = System.currentTimeMillis()
                     )
-                    userDao.insertUser(defaultUser)     // 插入默认用户,方便调试
+                    try {
+                        userDao.insertUser(defaultUser)     // 插入默认用户,方便调试
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
                 }
             }
         }).build()

@@ -7,6 +7,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import com.example.minichatapp.ui.components.CommonButton
 import com.example.minichatapp.ui.components.CommonTextField
 
@@ -14,6 +16,7 @@ import com.example.minichatapp.ui.components.CommonTextField
 fun LoginScreen(
     onLoginClick: (String, String) -> Unit,
     onRegisterClick: () -> Unit,
+    onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     // 设置默认用户名和密码
@@ -90,6 +93,23 @@ fun LoginScreen(
             onClick = onRegisterClick,
         ) {
             Text("还没有账号？立即注册")
+        }
+
+        // Settings link
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+        ) {
+            IconButton(
+                onClick = onSettingsClick,
+                modifier = Modifier.align(Alignment.TopEnd)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = "设置"
+                )
+            }
         }
     }
 }

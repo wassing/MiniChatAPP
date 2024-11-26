@@ -1,28 +1,30 @@
 package com.example.minichatapp.ui.screens
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.remember
-import com.example.minichatapp.domain.model.ChatMessage
+import androidx.compose.runtime.*
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.minichatapp.data.remote.ChatService
 import com.example.minichatapp.ui.screens.chat.ChatScreen
+import com.example.minichatapp.ui.screens.chat.ChatViewModel
 
 @Composable
 fun MainScreen(
-    username: String
+    username: String,
+    viewModel: ChatViewModel = hiltViewModel()
 ) {
-    // 临时使用静态消息列表，后续会替换为实时数据
-    val messages = remember { mutableStateListOf<ChatMessage>() }
+    // 连接到聊天服务器
+    LaunchedEffect(Unit) {
+        viewModel.connectToChat(username)
+    }
+
+    val messages by viewModel.messages.collectAsState()
+    val connectionState by viewModel.connectionState.collectAsState()
 
     ChatScreen(
         messages = messages,
         currentUsername = username,
         onSendMessage = { content ->
-            messages.add(
-                ChatMessage(
-                    senderId = username,
-                    content = content
-                )
-            )
-        }
+            viewModel.sendMessage(username, content)
+        },
+        isConnected = connectionState is ChatService.ConnectionState.Connected
     )
 }

@@ -3,17 +3,18 @@ main
       └── com.example.minichatapp
            ├── data
            │    ├── local
-           │    │    ├── AppDatabase
-           │    │    └── UserDao
+           │    │    ├── AppDatabase.kt
+           │    │    ├── AppSettings.kt
+           │    │    └── UserDao.kt
            │    ├── remote
            │    │    └── ChatService.kt
            │    └── repository
-           │         └── UserRepository
+           │         └── UserRepository.kt
            ├── di
-           │    └── DatabaseModule
+           │    └── DatabaseModule.kt
            ├── domain.model
-           │    ├── ChatMessage
-           │    └── User
+           │    ├── ChatMessage.kt
+           │    └── User.kt
            ├── ui
            │    ├── components
            │    │    └── CommonComponents.kt
@@ -26,7 +27,10 @@ main
            │    │    │    ├── ChatScreen.kt
            │    │    │    └── ChatMessageItem.kt
            │    │    ├── contact
-           │    │    ├── MainScreen.kt
+           │    │    ├── settings
+           │    │    │    ├── SettingsScreen.kt
+           │    │    │    └── SettingsViewModel.kt
+           │    │    └── MainScreen.kt
            │    ├── theme
            │    │     ├── Color.kt
            │    │     ├── Theme.kt

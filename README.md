@@ -53,6 +53,12 @@
 
    密码输入隐藏（使用OutlinedTextField的visualTransformation）
 
+## app设置模块
+
+1. 使用数据存储类AppSetting.kt来保存配置
+2. SettingScreen.kt创建设置页面
+3. 
+
 ## 聊天列表界面
 
 以后可能添加聊天列表+联系人功能
@@ -72,13 +78,10 @@ WebSocket连接框架
 2. 消息处理：支持文本消息的接收和广播
 3. 系统消息：在用户加入/离开时发送系统通知，支持消息类型区分（文本/图片）
 
-
-
-
-
 ### WebSocket客户端
 
 1. ChatService.lt：WebSocket客户端服务管理
 2. ChatViewModel：管理聊天状态
 3. NetworkModule.kt：网络模块
+4. 为了调试，在AndroidManifest.xml中启用了明文传输，否则必须要https的url才能正常进入聊天室，记得在正式发布前删掉
 
