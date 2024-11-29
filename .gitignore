@@ -1,6 +1,6 @@
 *.iml
 .gradle
-/assets
+/assets/draws
 /local.properties
 .idea
 /.idea/caches
@@ -17,3 +17,5 @@
 local.properties
 gradlew
 gradlew.bat
+*.docx
+*.tmp
