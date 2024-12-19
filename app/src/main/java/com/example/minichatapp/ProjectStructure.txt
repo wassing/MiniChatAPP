@@ -1,40 +1,57 @@
-main
- └── java
-      └── com.example.minichatapp
-           ├── data
-           │    ├── local
-           │    │    ├── AppDatabase.kt
-           │    │    ├── AppSettings.kt
-           │    │    └── UserDao.kt
-           │    ├── remote
-           │    │    └── ChatService.kt
-           │    └── repository
-           │         └── UserRepository.kt
-           ├── di
-           │    └── DatabaseModule.kt
-           ├── domain.model
-           │    ├── ChatMessage.kt
-           │    └── User.kt
-           ├── ui
-           │    ├── components
-           │    │    └── CommonComponents.kt
-           │    ├── screens
-           │    │    ├── auth
-           │    │    │    ├── AuthViewModel
-           │    │    │    ├── LoginScreen.kt
-           │    │    │    └── RegisterScreen.kt
-           │    │    ├── chat
-           │    │    │    ├── ChatScreen.kt
-           │    │    │    └── ChatMessageItem.kt
-           │    │    ├── contact
-           │    │    ├── settings
-           │    │    │    ├── SettingsScreen.kt
-           │    │    │    └── SettingsViewModel.kt
-           │    │    └── MainScreen.kt
-           │    ├── theme
-           │    │     ├── Color.kt
-           │    │     ├── Theme.kt
-           │    │     └── Type.kt
-           │    └── Navigation.kt
-           ├── MainActivity.kt
-           └── ProjectStructure.txt
+java
+└─com
+    └─example
+        └─minichatapp
+            │  MainActivity.kt
+            │  MiniChatApp.kt
+            │  ProjectStructure.txt
+            │
+            ├─data
+            │  ├─local
+            │  │      AppDatabase.kt
+            │  │      AppSettings.kt
+            │  │      UserDao.kt
+            │  │
+            │  ├─remote
+            │  │      ChatService.kt
+            │  │
+            │  └─repository
+            │          UserRepository.kt
+            │
+            ├─di
+            │      AppModule.kt
+            │      DatabaseModule.kt
+            │      NetworkModule.kt
+            │
+            ├─domain
+            │  └─model
+            │          ChatMessage.kt
+            │          User.kt
+            │
+            └─ui
+                │  Navigation.kt
+                │
+                ├─components
+                │      CommonComponents.kt
+                │
+                ├─screens
+                │  │  MainScreen.kt
+                │  │
+                │  ├─auth
+                │  │      AuthViewModel.kt
+                │  │      LoginScreen.kt
+                │  │      RegisterScreen.kt
+                │  │
+                │  ├─chat
+                │  │      ChatScreen.kt
+                │  │      ChatViewModel.kt
+                │  │
+                │  ├─contact
+                │  └─settings
+                │          SettingsScreen.kt
+                │          SettingsViewModel.kt
+                │
+                └─theme
+                        Color.kt
+                        Theme.kt
+                        Type.kt
