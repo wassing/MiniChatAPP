@@ -20,8 +20,8 @@ fun LoginScreen(
     modifier: Modifier = Modifier
 ) {
     // 设置默认用户名和密码
-    var username by remember { mutableStateOf("") }    // 默认用户名，在发布前记得删掉
-    var password by remember { mutableStateOf("") }
+    var username by remember { mutableStateOf("admin") }    // 默认用户名，在发布前记得删掉
+    var password by remember { mutableStateOf("111") }
     var isLoading by remember { mutableStateOf(false) }
     var showError by remember { mutableStateOf(false) }
 

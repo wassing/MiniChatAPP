@@ -10,12 +10,17 @@ java
             │  ├─local
             │  │      AppDatabase.kt
             │  │      AppSettings.kt
+            │  │      ContactDao.kt
+            │  │      Converters.kt
+            │  │      MessageDao.kt
             │  │      UserDao.kt
             │  │
             │  ├─remote
             │  │      ChatService.kt
             │  │
             │  └─repository
+            │          ContactRepository.kt
+            │          MessageRepository.kt
             │          UserRepository.kt
             │
             ├─di
@@ -26,6 +31,8 @@ java
             ├─domain
             │  └─model
             │          ChatMessage.kt
+            │          ChatRoom.kt
+            │          Contact.kt
             │          User.kt
             │
             └─ui
@@ -33,6 +40,9 @@ java
                 │
                 ├─components
                 │      CommonComponents.kt
+                │
+                ├─navigation
+                │      BottomNavItem.kt
                 │
                 ├─screens
                 │  │  MainScreen.kt
@@ -47,6 +57,11 @@ java
                 │  │      ChatViewModel.kt
                 │  │
                 │  ├─contact
+                │  │      AddContactDislog.kt
+                │  │      ContactListScreen.kt
+                │  │      ContactScreen.kt
+                │  │      ContactViewModel.kt
+                │  │
                 │  └─settings
                 │          SettingsScreen.kt
                 │          SettingsViewModel.kt

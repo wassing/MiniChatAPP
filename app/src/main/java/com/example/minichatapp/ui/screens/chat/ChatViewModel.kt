@@ -4,9 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.minichatapp.data.remote.ChatService
 import com.example.minichatapp.domain.model.ChatMessage
+import com.example.minichatapp.domain.model.ChatRoom
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -17,24 +17,47 @@ class ChatViewModel @Inject constructor(
     private val _messages = MutableStateFlow<List<ChatMessage>>(emptyList())
     val messages: StateFlow<List<ChatMessage>> = _messages
 
-    // 暴露ChatService的连接状态
+    // 暴露ChatService的连接状态和当前房间
     val connectionState: StateFlow<ChatService.ConnectionState> = chatService.connectionState
+    val currentRoom: StateFlow<ChatRoom?> = chatService.currentRoom
 
-    fun connectToChat(username: String) {
-        chatService.connectToChat(username)
+    fun initChat(username: String, room: ChatRoom) {
+        // 如果还没有连接，则先连接到聊天服务器
+        if (connectionState.value !is ChatService.ConnectionState.Connected) {
+            chatService.connectToChat(username)
+        }
+
+        // 加入指定的聊天室
+        chatService.joinRoom(room)
+
+        // 订阅消息
         viewModelScope.launch {
-            chatService.getMessages().collect { message ->
+            // 获取历史消息
+            chatService.getMessagesForRoom(room.id).collect { messages ->
+                _messages.value = messages
+            }
+        }
+
+        // 订阅新消息
+        viewModelScope.launch {
+            chatService.getCurrentRoomMessages().collect { message ->
                 _messages.value = _messages.value + message
             }
         }
     }
 
     fun sendMessage(senderId: String, content: String) {
+        val currentRoom = currentRoom.value ?: return
         val message = ChatMessage(
+            roomId = currentRoom.id,
             senderId = senderId,
             content = content
         )
         chatService.sendMessage(message)
+    }
+
+    fun leaveRoom() {
+        chatService.leaveCurrentRoom()
     }
 
     override fun onCleared() {

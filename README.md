@@ -77,3 +77,5 @@ main
 3. 聊天室界面
 
    ![image-20241129153431613](./assets/image-20241129153431613.png)
+
+请看当前的项目，其是一个基于API26+GroovyDSL+gradle=8.5开发的Android聊天APP，其中/chatserver中是一个使用SpringBoot框架搭建的websocket服务器端，请你先大致浏览一下项目，帮我给出一些改进意见

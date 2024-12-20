@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -16,8 +17,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.minichatapp.domain.model.ChatMessage
-import com.example.minichatapp.ui.components.CommonTextField
-import kotlinx.coroutines.launch
+import com.example.minichatapp.domain.model.ChatRoom
+import com.example.minichatapp.domain.model.RoomType
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -26,9 +27,11 @@ import java.util.*
 fun ChatScreen(
     messages: List<ChatMessage>,
     currentUsername: String,
+    chatRoom: ChatRoom,
     onSendMessage: (String) -> Unit,
-    isConnected: Boolean = false,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onBackClick: (() -> Unit)? = null,
+    isConnected: Boolean = false
 ) {
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
@@ -46,10 +49,18 @@ fun ChatScreen(
     ) {
         // Top Bar
         TopAppBar(
-            title = { Text("聊天室") },
+            title = { Text(chatRoom.name) },
+            navigationIcon = {
+                if (chatRoom.type == RoomType.PRIVATE && onBackClick != null) {
+                    IconButton(onClick = onBackClick) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "返回")
+                    }
+                }
+            },
             colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = MaterialTheme.colorScheme.primary,
                 titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
             )
         )
 
