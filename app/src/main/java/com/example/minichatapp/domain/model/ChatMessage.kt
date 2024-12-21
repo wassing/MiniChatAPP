@@ -2,13 +2,18 @@ package com.example.minichatapp.domain.model
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import androidx.room.ColumnInfo
+import androidx.room.Index
 
-@Entity(tableName = "messages")  // 注意这里的表名是 "messages"
+@Entity(
+    tableName = "messages",
+    indices = [Index("roomId")]
+)
 data class ChatMessage(
     @PrimaryKey val id: Long = System.currentTimeMillis(),
-    val roomId: String,                     // 聊天室ID
-    val senderId: String,                   // 发送者用户名
-    val content: String,                    // 消息内容
+    val roomId: String,
+    val senderId: String,
+    val content: String,
     val timestamp: Long = System.currentTimeMillis(),
     val type: MessageType = MessageType.TEXT,
     val status: MessageStatus = MessageStatus.SENDING

@@ -6,11 +6,18 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface MessageDao {
+    @Transaction
     @Query("SELECT * FROM messages WHERE roomId = :roomId ORDER BY timestamp ASC")
     fun getMessagesByRoomId(roomId: String): Flow<List<ChatMessage>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMessage(message: ChatMessage)
+
+    @Query("SELECT COUNT(*) FROM messages")
+    suspend fun getMessageCount(): Int
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insertMessageSync(message: ChatMessage)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMessages(messages: List<ChatMessage>)

@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.minichatapp.data.remote.ChatService
 import com.example.minichatapp.domain.model.ChatMessage
 import com.example.minichatapp.domain.model.ChatRoom
+import com.example.minichatapp.domain.model.MessageStatus
+import com.example.minichatapp.domain.model.MessageType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -47,12 +49,21 @@ class ChatViewModel @Inject constructor(
     }
 
     fun sendMessage(senderId: String, content: String) {
-        val currentRoom = currentRoom.value ?: return
+        println("ChatViewModel: Attempting to send message")
+        val currentRoom = currentRoom.value
+        if (currentRoom == null) {
+            println("ChatViewModel: Error - No current room")
+            return
+        }
+        println("ChatViewModel: Creating message for room ${currentRoom.id}")
         val message = ChatMessage(
             roomId = currentRoom.id,
             senderId = senderId,
-            content = content
+            content = content,
+            type = MessageType.TEXT,
+            status = MessageStatus.SENDING
         )
+        println("ChatViewModel: Sending message through ChatService")
         chatService.sendMessage(message)
     }
 

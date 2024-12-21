@@ -43,13 +43,19 @@ fun MainScreen(
     )
 
     // 初始化聊天
-    LaunchedEffect(currentChatRoom.id) {
+    LaunchedEffect(currentChatRoom.id, username) {
+        println("MainScreen: Initializing chat - username: $username, room: ${currentChatRoom.id}")
         chatViewModel.initChat(username, currentChatRoom)
     }
 
     // 收集状态
     val messages by chatViewModel.messages.collectAsState()
     val connectionState by chatViewModel.connectionState.collectAsState()
+
+    // 监听连接状态变化
+    LaunchedEffect(connectionState) {
+        println("MainScreen: Connection state changed to: $connectionState")
+    }
 
     Scaffold(
         modifier = modifier,
@@ -88,11 +94,13 @@ fun MainScreen(
                 modifier = Modifier.padding(paddingValues)
             ) {
                 composable(BottomNavItem.PublicChat.route) {
+                    println("MainScreen: Setting up PublicChat screen")
                     ChatScreen(
                         messages = messages,
                         currentUsername = username,
                         chatRoom = currentChatRoom,
                         onSendMessage = { content ->
+                            println("MainScreen: Sending message in public chat")
                             chatViewModel.sendMessage(username, content)
                         },
                         isConnected = connectionState is ChatService.ConnectionState.Connected
