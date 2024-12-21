@@ -1,25 +1,36 @@
+// src/main/java/com/example/chatserver/model/ChatMessage.java
 package com.example.chatserver.model;
 
 import lombok.Data;
-import java.time.Instant;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Data
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ChatMessage {
-    private String id;
-    private String roomId;  // 添加roomId字段
+    private Long id;
+    private String roomId;
     private String senderId;
     private String content;
+    private Long timestamp;
     private MessageType type;
-    private long timestamp;
+    private MessageStatus status;
+
+    // 无参构造函数
+    public ChatMessage() {
+        this.id = System.currentTimeMillis();
+        this.timestamp = System.currentTimeMillis();
+        this.type = MessageType.TEXT;
+        this.status = MessageStatus.SENDING;
+    }
 
     public enum MessageType {
         TEXT,
         IMAGE
     }
 
-    public ChatMessage() {
-        this.id = String.valueOf(System.currentTimeMillis());
-        this.timestamp = Instant.now().toEpochMilli();
-        this.type = MessageType.TEXT;
+    public enum MessageStatus {
+        SENDING,
+        SENT,
+        FAILED
     }
 }

@@ -1,5 +1,8 @@
 package com.example.chatserver.handler;
 
+import com.example.chatserver.model.ChatMessage;
+import com.example.chatserver.model.ChatMessage.MessageStatus;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -8,98 +11,117 @@ import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
+
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
-import com.example.chatserver.model.ChatMessage;
 
 @Component
 public class ChatWebSocketHandler extends TextWebSocketHandler {
-    
     private static final Logger logger = LoggerFactory.getLogger(ChatWebSocketHandler.class);
+    
     private final ConcurrentHashMap<String, WebSocketSession> sessions = new ConcurrentHashMap<>();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
         String username = extractUsername(session);
+        logger.info("用户 {} 已连接", username);
         sessions.put(username, session);
         
-        // 记录连接信息
-        logger.info("用户 {} 已连接. 当前在线用户数: {}", username, sessions.size());
-        logger.info("当前在线用户列表: {}", String.join(", ", sessions.keySet()));
-        
-        // 广播用户加入消息
-        broadcastMessage(createSystemMessage(username + " 加入了聊天室"));
+        // 发送连接成功消息
+        sendSystemMessage(session, "连接成功");
     }
 
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) {
         try {
+            String username = extractUsername(session);
             ChatMessage chatMessage = objectMapper.readValue(message.getPayload(), ChatMessage.class);
-            // 记录消息信息
-            logger.info("收到来自 {} 的消息: {}", chatMessage.getSenderId(), chatMessage.getContent());
-            broadcastMessage(chatMessage);
+            
+            // 更新消息状态为已发送
+            chatMessage.setStatus(MessageStatus.SENT);
+            
+            if ("public".equals(chatMessage.getRoomId())) {
+                // 广播到所有连接的客户端
+                broadcastMessage(chatMessage);
+            } else {
+                // 处理私聊消息
+                handlePrivateMessage(chatMessage);
+            }
+            
+            logger.debug("处理消息: {}", objectMapper.writeValueAsString(chatMessage));
+            
         } catch (Exception e) {
             logger.error("处理消息时发生错误", e);
+            try {
+                ChatMessage errorMessage = new ChatMessage();
+                errorMessage.setSenderId("System");
+                errorMessage.setContent("消息处理失败: " + e.getMessage());
+                session.sendMessage(new TextMessage(objectMapper.writeValueAsString(errorMessage)));
+            } catch (IOException ex) {
+                logger.error("发送错误消息失败", ex);
+            }
         }
     }
 
-    @Override
-    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
-        String username = extractUsername(session);
-        sessions.remove(username);
-        
-        // 记录断开连接信息
-        logger.info("用户 {} 已断开连接. 当前在线用户数: {}", username, sessions.size());
-        logger.info("当前在线用户列表: {}", String.join(", ", sessions.keySet()));
-        
-        // 广播用户离开消息
-        broadcastMessage(createSystemMessage(username + " 离开了聊天室"));
-    }
-
-    @Override
-    public void handleTransportError(WebSocketSession session, Throwable exception) {
-        String username = extractUsername(session);
-        logger.error("与用户 {} 的连接发生错误", username, exception);
-    }
-
     private void broadcastMessage(ChatMessage message) {
+        String messageJson;
         try {
-            String messageJson = objectMapper.writeValueAsString(message);
+            messageJson = objectMapper.writeValueAsString(message);
             TextMessage textMessage = new TextMessage(messageJson);
             
-            sessions.values().forEach(session -> {
-                try {
-                    if (session.isOpen()) {
+            for (WebSocketSession session : sessions.values()) {
+                if (session.isOpen()) {
+                    try {
                         session.sendMessage(textMessage);
+                    } catch (IOException e) {
+                        logger.error("发送消息失败: {}", e.getMessage());
                     }
-                } catch (IOException e) {
-                    logger.error("发送消息给用户时发生错误", e);
                 }
-            });
-            
-            // 记录广播信息
-            if (!"System".equals(message.getSenderId())) {
-                logger.info("消息已广播给 {} 个用户", sessions.size());
             }
-        } catch (Exception e) {
-            logger.error("广播消息时发生错误", e);
+        } catch (JsonProcessingException e) {
+            logger.error("消息序列化失败", e);
+        }
+    }
+
+    private void handlePrivateMessage(ChatMessage message) {
+        String[] participants = message.getRoomId().split("-");
+        for (String participant : participants) {
+            WebSocketSession session = sessions.get(participant);
+            if (session != null && session.isOpen()) {
+                try {
+                    session.sendMessage(new TextMessage(objectMapper.writeValueAsString(message)));
+                } catch (IOException e) {
+                    logger.error("发送私聊消息失败: {}", e.getMessage());
+                }
+            }
+        }
+    }
+
+    private void sendSystemMessage(WebSocketSession session, String content) {
+        try {
+            ChatMessage systemMessage = new ChatMessage();
+            systemMessage.setSenderId("System");
+            systemMessage.setContent(content);
+            systemMessage.setRoomId("public");
+            session.sendMessage(new TextMessage(objectMapper.writeValueAsString(systemMessage)));
+        } catch (IOException e) {
+            logger.error("发送系统消息失败", e);
         }
     }
 
     private String extractUsername(WebSocketSession session) {
         String query = session.getUri().getQuery();
         if (query != null && query.startsWith("username=")) {
-            return query.substring(9); // "username=".length() == 9
+            return query.substring(9);
         }
         return "anonymous-" + session.getId();
     }
 
-    private ChatMessage createSystemMessage(String content) {
-        ChatMessage message = new ChatMessage();
-        message.setSenderId("System");
-        message.setContent(content);
-        message.setType(ChatMessage.MessageType.TEXT);
-        return message;
+    @Override
+    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
+        String username = extractUsername(session);
+        sessions.remove(username);
+        logger.info("用户 {} 断开连接, 状态: {}", username, status);
     }
 }
