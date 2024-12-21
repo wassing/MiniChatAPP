@@ -47,12 +47,19 @@ class ChatViewModel @Inject constructor(
     }
 
     fun sendMessage(senderId: String, content: String) {
-        val currentRoom = currentRoom.value ?: return
+        println("ChatViewModel: Attempting to send message")
+        val currentRoom = currentRoom.value
+        if (currentRoom == null) {
+            println("ChatViewModel: Error - No current room")
+            return
+        }
+        println("ChatViewModel: Creating message for room ${currentRoom.id}")
         val message = ChatMessage(
             roomId = currentRoom.id,
             senderId = senderId,
             content = content
         )
+        println("ChatViewModel: Sending message through ChatService")
         chatService.sendMessage(message)
     }
 

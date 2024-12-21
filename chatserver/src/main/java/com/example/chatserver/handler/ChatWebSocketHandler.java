@@ -35,7 +35,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) {
         try {
-            String username = extractUsername(session);
+            // String username = extractUsername(session);
             ChatMessage chatMessage = objectMapper.readValue(message.getPayload(), ChatMessage.class);
             
             // 更新消息状态为已发送

@@ -16,7 +16,15 @@ class MessageRepository @Inject constructor(
 
     // 保存新消息
     suspend fun saveMessage(message: ChatMessage) {
-        messageDao.insertMessage(message)
+        try {
+            println("MessageRepository: Attempting to save message with id: ${message.id}")
+            messageDao.insertMessage(message)
+            println("MessageRepository: Message saved successfully")
+        } catch (e: Exception) {
+            println("MessageRepository: Error saving message: ${e.message}")
+            println("MessageRepository: Stack trace: ${e.stackTrace.joinToString("\\n")}")
+            throw e
+        }
     }
 
     // 批量保存消息

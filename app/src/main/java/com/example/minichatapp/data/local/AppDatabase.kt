@@ -13,7 +13,7 @@ import com.example.minichatapp.domain.model.User
         Contact::class,
         ChatMessage::class
     ],
-    version = 2,  // 增加版本号
+    version = 3,  // 增加版本号
     exportSchema = false
 )
 @TypeConverters(Converters::class)
