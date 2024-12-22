@@ -29,40 +29,10 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         logger.info("用户 {} 已连接", username);
         sessions.put(username, session);
         
-        // 创建加入消息并广播
-        ChatMessage joinMessage = new ChatMessage();
-        joinMessage.setId(System.currentTimeMillis());
-        joinMessage.setSenderId("System");
-        joinMessage.setContent("用户 " + username + " 加入了聊天室");
-        joinMessage.setRoomId("public");
-        joinMessage.setTimestamp(System.currentTimeMillis());
-        joinMessage.setType(MessageType.TEXT);
-        joinMessage.setStatus(MessageStatus.SENT);
-
-        // 先发送欢迎消息给新用户
-        try {
-            ChatMessage welcomeMessage = new ChatMessage();
-            welcomeMessage.setId(System.currentTimeMillis());
-            welcomeMessage.setSenderId("System");
-            welcomeMessage.setContent("欢迎加入聊天室");
-            welcomeMessage.setRoomId("public");
-            welcomeMessage.setTimestamp(System.currentTimeMillis());
-            welcomeMessage.setType(MessageType.TEXT);
-            welcomeMessage.setStatus(MessageStatus.SENT);
-            
-            String welcomeJson = objectMapper.writeValueAsString(welcomeMessage);
-            session.sendMessage(new TextMessage(welcomeJson));
-            
-            // 然后广播加入消息
-            String joinJson = objectMapper.writeValueAsString(joinMessage);
-            for (WebSocketSession s : sessions.values()) {
-                if (s.isOpen()) {
-                    s.sendMessage(new TextMessage(joinJson));
-                }
-            }
-        } catch (IOException e) {
-            logger.error("发送欢迎消息失败", e);
-        }
+        // 首先发送私人欢迎消息
+        sendPrivateWelcomeMessage(session);
+        // 然后广播用户加入消息
+        broadcastUserJoinMessage(username);
     }
 
     @Override
@@ -170,5 +140,36 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         leaveMessage.setContent("用户 " + username + " 离开了聊天室");
         leaveMessage.setRoomId("public");
         broadcastMessage(leaveMessage);
+    }
+
+    private void sendPrivateWelcomeMessage(WebSocketSession session) {
+        ChatMessage welcomeMessage = new ChatMessage();
+        welcomeMessage.setId(System.currentTimeMillis());
+        welcomeMessage.setSenderId("System");
+        welcomeMessage.setContent("欢迎加入聊天室");
+        welcomeMessage.setRoomId("public");
+        welcomeMessage.setTimestamp(System.currentTimeMillis());
+        welcomeMessage.setType(MessageType.TEXT);
+        welcomeMessage.setStatus(MessageStatus.SENT);
+
+        try {
+            String welcomeJson = objectMapper.writeValueAsString(welcomeMessage);
+            session.sendMessage(new TextMessage(welcomeJson));
+        } catch (IOException e) {
+            logger.error("Failed to send welcome message", e);
+        }
+    }
+
+    private void broadcastUserJoinMessage(String username) {
+        ChatMessage joinMessage = new ChatMessage();
+        joinMessage.setId(System.currentTimeMillis() + 1);
+        joinMessage.setSenderId("System");
+        joinMessage.setContent("用户 " + username + " 加入了聊天室");
+        joinMessage.setRoomId("public");
+        joinMessage.setTimestamp(System.currentTimeMillis());
+        joinMessage.setType(MessageType.TEXT);
+        joinMessage.setStatus(MessageStatus.SENT);
+
+        broadcastMessage(joinMessage);
     }
 }

@@ -1,5 +1,6 @@
 package com.example.minichatapp.data.repository
 
+import android.util.Log
 import com.example.minichatapp.data.local.MessageDao
 import com.example.minichatapp.domain.model.ChatMessage
 import com.example.minichatapp.domain.model.MessageStatus
@@ -13,6 +14,8 @@ import javax.inject.Inject
 class MessageRepository @Inject constructor(
     private val messageDao: MessageDao
 ) {
+    private val TAG = "MessageRepository"
+
     // 获取特定聊天室的所有消息
     fun getMessagesForRoom(roomId: String): Flow<List<ChatMessage>> {
         return messageDao.getMessagesByRoomId(roomId)
@@ -21,25 +24,20 @@ class MessageRepository @Inject constructor(
     // 保存新消息
     suspend fun saveMessage(message: ChatMessage) {
         try {
-            println("MessageRepository: Attempting to save message with id: ${message.id}")
-            println("MessageRepository: Message content: ${message.content}")
-            println("MessageRepository: Message type: ${message.type}")
-            println("MessageRepository: Message status: ${message.status}")
-
-            withContext(Dispatchers.IO) {
-                try {
-                    println("MessageRepository: Trying to Inserting message")
-                    messageDao.insertMessage(message)
-                    println("MessageRepository: Message saved successfully")
-                } catch (e: Exception) {
-                    println("MessageRepository: Error during insertion: ${e.message}")
-                    e.printStackTrace()
-                    throw e
+            // 检查是否已存在相同ID的消息
+            val existingMessage = messageDao.getMessageById(message.id)
+            if (existingMessage == null) {
+                messageDao.insertMessage(message)
+                Log.d(TAG, "Message saved: ${message.id}")
+            } else {
+                // 如果消息已存在，只更新状态
+                if (existingMessage.status != message.status) {
+                    messageDao.updateMessage(message)
+                    Log.d(TAG, "Message updated: ${message.id}")
                 }
             }
         } catch (e: Exception) {
-            println("MessageRepository: Outer error: ${e.message}")
-            e.printStackTrace()
+            Log.e(TAG, "Error saving message", e)
             throw e
         }
     }
@@ -75,32 +73,4 @@ class MessageRepository @Inject constructor(
         }
     }
 
-    suspend fun testDatabaseConnection() {
-        withContext(Dispatchers.IO) {
-            try {
-                // 尝试插入测试消息
-                val testMessage = ChatMessage(
-                    id = System.currentTimeMillis(),
-                    roomId = "test",
-                    senderId = "test",
-                    content = "test message",
-                    timestamp = System.currentTimeMillis(),
-                    type = MessageType.TEXT,
-                    status = MessageStatus.SENDING
-                )
-
-                println("MessageRepository: Testing database - Inserting test message")
-                messageDao.insertMessage(testMessage)
-                println("MessageRepository: Test message inserted successfully")
-
-                // 验证插入
-                val messages = messageDao.getMessagesByRoomId("test").first()
-                println("MessageRepository: Retrieved ${messages.size} messages from test room")
-
-            } catch (e: Exception) {
-                println("MessageRepository: Database test failed: ${e.message}")
-                e.printStackTrace()
-            }
-        }
-    }
 }

@@ -50,35 +50,11 @@ object DatabaseModule {
             """)
                     db.execSQL("CREATE INDEX IF NOT EXISTS index_messages_roomId ON messages(roomId)")
                     println("DatabaseModule: Messages table created")
-
-                    // 验证表是否创建成功
-                    val cursor = db.query("SELECT name FROM sqlite_master WHERE type='table' AND name='messages'")
-                    cursor.use {
-                        if (it.moveToFirst()) {
-                            println("DatabaseModule: Messages table exists after creation")
-                        } else {
-                            println("DatabaseModule: Failed to create messages table!")
-                        }
-                    }
                 }
 
                 override fun onOpen(db: SupportSQLiteDatabase) {
                     super.onOpen(db)
                     println("DatabaseModule: Database opened")
-                    // 检查表结构
-                    try {
-                        val cursor = db.query("PRAGMA table_info(messages)")
-                        cursor.use {
-                            println("DatabaseModule: Messages table structure:")
-                            while (it.moveToNext()) {
-                                val columnName = it.getString(it.getColumnIndex("name"))
-                                val columnType = it.getString(it.getColumnIndex("type"))
-                                println("DatabaseModule: Column: $columnName, Type: $columnType")
-                            }
-                        }
-                    } catch (e: Exception) {
-                        println("DatabaseModule: Error checking table structure: ${e.message}")
-                    }
                 }
             })
             .setJournalMode(RoomDatabase.JournalMode.TRUNCATE) // 添加这行以减少 SQLite 锁定问题

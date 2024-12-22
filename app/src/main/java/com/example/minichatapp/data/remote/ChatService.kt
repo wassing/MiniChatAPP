@@ -1,5 +1,6 @@
 package com.example.minichatapp.data.remote
 
+import android.util.Log
 import com.example.minichatapp.data.local.AppSettings
 import com.example.minichatapp.data.repository.MessageRepository
 import com.example.minichatapp.domain.model.ChatMessage
@@ -22,6 +23,8 @@ class ChatService @Inject constructor(
     private val appSettings: AppSettings,
     private val messageRepository: MessageRepository
 ) {
+    private val TAG = "ChatService"  // 在类顶部定义
+
     private var webSocket: WebSocket? = null
     private var currentUsername: String? = null
     private var reconnectJob: Job? = null
@@ -93,7 +96,6 @@ class ChatService @Inject constructor(
                     )
                     println("Sending join message: ${gson.toJson(message)}")
                     val sent = webSocket.send(gson.toJson(message))
-                    println("Join message sent: $sent")
                 }
             }
 
@@ -103,14 +105,11 @@ class ChatService @Inject constructor(
                         val message = gson.fromJson(text, ChatMessage::class.java)
                         handleIncomingMessage(message)
                     } catch (e: Exception) {
-                        e.printStackTrace()
-                        broadcastSystemMessage(
-                            createPublicRoom().id,
-                            "消息处理错误: ${e.message}"
-                        )
+                        Log.e(TAG, "Error processing message", e)
                     }
                 }
             }
+
 
             override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
                 serviceScope.launch {
@@ -168,68 +167,31 @@ class ChatService @Inject constructor(
     fun sendMessage(message: ChatMessage) {
         serviceScope.launch {
             try {
-                println("ChatService: Starting message send process")
-                println("ChatService: Message details - id: ${message.id}, roomId: ${message.roomId}, sender: ${message.senderId}")
+                println("ChatService: Sending Message - id: ${message.id}, roomId: ${message.roomId}, sender: ${message.senderId}, text: ${message.content}")
 
-                // 检查连接状态
-                val currentState = _connectionState.value
-                println("ChatService: Current connection state: $currentState")
-
-                // 获取当前的WebSocket实例
                 val currentWebSocket = webSocket
-                println("ChatService: Current WebSocket instance: ${if (currentWebSocket != null) "exists" else "null"}")
 
-                if (currentState !is ConnectionState.Connected || currentWebSocket == null) {
+                if (_connectionState.value !is ConnectionState.Connected || webSocket == null) {
                     println("ChatService: Cannot send message - not properly connected")
                     throw Exception("Not properly connected to server")
                 }
 
-                try {
-                    // 先保存消息到本地
-                    println("ChatService: Saving message to local repository")
-                    messageRepository.saveMessage(message)
-                    println("ChatService: Message saved to local repository successfully")
-                } catch (e: Exception) {
-                    println("ChatService: Error saving message to repository: ${e.message}")
-                    throw e
+                messageRepository.saveMessage(message)
+
+                // 准备发送的消息
+                val messageJson = gson.toJson(message)
+                val sent = currentWebSocket?.send(messageJson)
+
+                if (sent == true) {
+                    messageRepository.updateMessageStatus(message, MessageStatus.SENT)
+                } else {
+                    println("ChatService: Send returned false")
+                    throw Exception("Message send returned false")
                 }
 
-                try {
-                    // 准备发送的消息
-                    val messageJson = gson.toJson(message)
-                    println("ChatService: Message serialized to JSON: $messageJson")
-
-                    println("ChatService: Attempting to send message via WebSocket")
-                    val sent = currentWebSocket.send(messageJson)
-                    println("ChatService: WebSocket.send() returned: $sent")
-
-                    if (sent) {
-                        try {
-                            println("ChatService: Message sent successfully, updating status")
-                            messageRepository.updateMessageStatus(message, MessageStatus.SENT)
-                            println("ChatService: Message status updated to SENT")
-                        } catch (e: Exception) {
-                            println("ChatService: Error updating message status: ${e.message}")
-                            throw e
-                        }
-                    } else {
-                        println("ChatService: Send returned false")
-                        throw Exception("Message send returned false")
-                    }
-                } catch (e: Exception) {
-                    println("ChatService: Error during message send: ${e.message}")
-                    println("ChatService: Error stack trace: ${e.stackTrace.joinToString("\\n")}")
-                    throw e
-                }
             } catch (e: Exception) {
-                println("ChatService: Critical error in send process: ${e.message}")
-                println("ChatService: Full stack trace: ${e.stackTrace.joinToString("\\n")}")
-                try {
-                    messageRepository.updateMessageStatus(message, MessageStatus.FAILED)
-                } catch (repoEx: Exception) {
-                    println("ChatService: Error updating message status to FAILED: ${repoEx.message}")
-                }
-
+                println("ChatService: Error in send process: ${e.message}")
+                messageRepository.updateMessageStatus(message, MessageStatus.FAILED)
                 if (_connectionState.value !is ConnectionState.Connected) {
                     println("ChatService: Connection lost, starting reconnect")
                     startReconnectJob()

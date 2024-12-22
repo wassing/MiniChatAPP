@@ -33,4 +33,7 @@ interface MessageDao {
 
     @Query("SELECT * FROM messages WHERE roomId = :roomId AND timestamp > :timestamp ORDER BY timestamp ASC LIMIT 1")
     suspend fun getFirstMessageAfterTimestamp(roomId: String, timestamp: Long): ChatMessage?
+
+    @Query("SELECT * FROM messages WHERE id = :messageId LIMIT 1")
+    suspend fun getMessageById(messageId: Long): ChatMessage?
 }

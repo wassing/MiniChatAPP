@@ -107,7 +107,6 @@ fun ChatScreen(
                 IconButton(
                     onClick = {
                         if (messageText.isNotBlank()) {
-                            println("ChatScreen: Sending message: $messageText")
                             onSendMessage(messageText)
                             messageText = ""
                         }

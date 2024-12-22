@@ -94,13 +94,11 @@ fun MainScreen(
                 modifier = Modifier.padding(paddingValues)
             ) {
                 composable(BottomNavItem.PublicChat.route) {
-                    println("MainScreen: Setting up PublicChat screen")
                     ChatScreen(
                         messages = messages,
                         currentUsername = username,
                         chatRoom = currentChatRoom,
                         onSendMessage = { content ->
-                            println("MainScreen: Sending message in public chat")
                             chatViewModel.sendMessage(username, content)
                         },
                         isConnected = connectionState is ChatService.ConnectionState.Connected
