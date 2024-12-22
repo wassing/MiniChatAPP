@@ -56,6 +56,8 @@ object DatabaseModule {
                     super.onOpen(db)
                     println("DatabaseModule: Database opened")
                 }
+
+
             })
             .setJournalMode(RoomDatabase.JournalMode.TRUNCATE) // 添加这行以减少 SQLite 锁定问题
             .fallbackToDestructiveMigration() // 在开发阶段使用，生产环境需要proper migration

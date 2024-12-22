@@ -1,9 +1,8 @@
 package com.example.minichatapp.domain.model
 
 import androidx.room.Entity
-import androidx.room.PrimaryKey
-import androidx.room.ColumnInfo
 import androidx.room.Index
+import androidx.room.PrimaryKey
 
 @Entity(
     tableName = "messages",
@@ -21,7 +20,11 @@ data class ChatMessage(
 
 enum class MessageType {
     TEXT,
-    IMAGE
+    IMAGE,
+    CHECK_USER,
+    USER_RESPONSE,
+    CONTACT_ADDED,
+    SYSTEM_NOTIFICATION
 }
 
 enum class MessageStatus {

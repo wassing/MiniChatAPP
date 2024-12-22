@@ -24,8 +24,12 @@ public class ChatMessage {
     }
 
     public enum MessageType {
-        TEXT,
-        IMAGE
+        TEXT,           // 普通文本消息
+        IMAGE,          // 图片消息
+        CHECK_USER,     // 检查用户是否存在
+        USER_RESPONSE,  // 用户查询响应
+        CONTACT_ADDED,   // 添加联系人通知
+        SYSTEM_NOTIFICATION // 系统通知
     }
 
     public enum MessageStatus {

@@ -110,6 +110,7 @@ fun AppNavigation() {
             MainScreen(
                 username = username,
                 isPublicChat = false,
+                navController = navController,
                 chatRoom = ChatRoom(
                     id = listOf(username, contactUsername).sorted().joinToString("-"),
                     type = RoomType.PRIVATE,

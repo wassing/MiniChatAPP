@@ -2,9 +2,11 @@ package com.example.minichatapp.data.remote
 
 import android.util.Log
 import com.example.minichatapp.data.local.AppSettings
+import com.example.minichatapp.data.local.ContactDao
 import com.example.minichatapp.data.repository.MessageRepository
 import com.example.minichatapp.domain.model.ChatMessage
 import com.example.minichatapp.domain.model.ChatRoom
+import com.example.minichatapp.domain.model.Contact
 import com.example.minichatapp.domain.model.MessageStatus
 import com.example.minichatapp.domain.model.MessageType
 import com.example.minichatapp.domain.model.RoomType
@@ -21,12 +23,15 @@ class ChatService @Inject constructor(
     private val client: OkHttpClient,
     private val gson: Gson,
     private val appSettings: AppSettings,
-    private val messageRepository: MessageRepository
+    private val messageRepository: MessageRepository,
+    private val contactDao: ContactDao
 ) {
     private val TAG = "ChatService"  // 在类顶部定义
 
     private var webSocket: WebSocket? = null
-    private var currentUsername: String? = null
+    private var _currentUsername: String? = null
+    val currentUsername: String?
+        get() = _currentUsername
     private var reconnectJob: Job? = null
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -41,7 +46,7 @@ class ChatService @Inject constructor(
     val onlineUsers: StateFlow<Set<String>> = _onlineUsers
 
     fun connectToChat(username: String) {
-        this.currentUsername = username
+        this._currentUsername = username
         connectWebSocket()
         // 连接成功后自动加入公共聊天室
         joinRoom(createPublicRoom())
@@ -103,7 +108,28 @@ class ChatService @Inject constructor(
                 serviceScope.launch {
                     try {
                         val message = gson.fromJson(text, ChatMessage::class.java)
-                        handleIncomingMessage(message)
+
+                        println("Received message: $message")
+
+                        when (message.type) {
+                            MessageType.USER_RESPONSE -> {
+                                // USER_RESPONSE 查询用户是否存在的响应
+                                val exists = message.content.toBoolean()
+                                userCheckResponses.trySend(exists)
+                            }
+                            MessageType.CONTACT_ADDED -> {
+                                // CONTACT_ADDED 被他人添加为联系人
+                                val adderUsername = message.senderId
+                                val contact = Contact(
+                                    username = adderUsername,
+                                    nickname = adderUsername,
+                                    addedAt = System.currentTimeMillis()
+                                )
+                                messageRepository.saveMessage(message)
+                                contactDao.insertContact(contact)
+                            }
+                            else -> handleIncomingMessage(message)
+                        }
                     } catch (e: Exception) {
                         Log.e(TAG, "Error processing message", e)
                     }
@@ -144,12 +170,30 @@ class ChatService @Inject constructor(
 
     private fun handleIncomingMessage(message: ChatMessage) {
         serviceScope.launch {
-            // 更新消息状态并保存到本地
-            val updatedMessage = message.copy(status = MessageStatus.SENT)
-            messageRepository.saveMessage(updatedMessage)
-
-            // 将消息发送到对应聊天室的 Channel
-            messageChannels[message.roomId]?.send(updatedMessage)
+            try {
+                when (message.type) {
+                    MessageType.USER_RESPONSE -> {
+                        // USER_RESPONSE 消息只用于用户检查，不需要存储
+                        val exists = message.content.toBoolean()
+                        userCheckResponses.trySend(exists)
+                    }
+                    MessageType.SYSTEM_NOTIFICATION -> {
+                        // SYSTEM_NOTIFICATION 消息只用于系统通知，不需要存储
+                        if (message.senderId != "System") {
+                            messageRepository.saveMessage(message)
+                        }
+                    }
+                    MessageType.TEXT -> {
+                        // 普通文本消息正常存储
+                        messageRepository.saveMessage(message)
+                    }
+                    else -> {
+                        messageChannels[message.roomId]?.send(message)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error processing message", e)
+            }
         }
     }
 
@@ -277,5 +321,33 @@ class ChatService @Inject constructor(
         object Connecting : ConnectionState()
         object Connected : ConnectionState()
         data class Failed(val message: String) : ConnectionState()
+    }
+
+    private val userCheckResponses = Channel<Boolean>(Channel.BUFFERED)
+
+    suspend fun checkUserExists(username: String): Boolean {
+        if (_connectionState.value !is ConnectionState.Connected) {
+            throw Exception("Not connected to server")
+        }
+
+        try {
+            val message = ChatMessage(
+                roomId = "system",
+                senderId = currentUsername ?: "unknown",
+                content = username,
+                type = MessageType.CHECK_USER
+            )
+
+            Log.d(TAG, "Sending user check message for: $username")
+            webSocket?.send(gson.toJson(message))
+
+            // 等待响应，设置5秒超时
+            return withTimeout(5000) {
+                userCheckResponses.receive()
+            }
+        } catch (e: TimeoutCancellationException) {
+            Log.w(TAG, "User check timeout")
+            throw Exception("查询用户超时")
+        }
     }
 }

@@ -27,13 +27,14 @@ class MessageRepository @Inject constructor(
             // 检查是否已存在相同ID的消息
             val existingMessage = messageDao.getMessageById(message.id)
             if (existingMessage == null) {
+                Log.d(TAG, "Saving message: ${message.id}")
                 messageDao.insertMessage(message)
-                Log.d(TAG, "Message saved: ${message.id}")
+                Log.d(TAG, "Message saving successful: ${message.id}")
             } else {
                 // 如果消息已存在，只更新状态
                 if (existingMessage.status != message.status) {
+                    Log.d(TAG, "Updating message: ${message.id}")
                     messageDao.updateMessage(message)
-                    Log.d(TAG, "Message updated: ${message.id}")
                 }
             }
         } catch (e: Exception) {

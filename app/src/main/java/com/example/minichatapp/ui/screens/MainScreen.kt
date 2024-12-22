@@ -28,6 +28,8 @@ fun MainScreen(
     isPublicChat: Boolean = true,
     onNavigateToPrivateChat: ((String) -> Unit)? = null
 ) {
+    require(isPublicChat || navController != null) { "Private chat requires a NavController" }
+
     val bottomNavController = rememberNavController()
     val chatViewModel: ChatViewModel = hiltViewModel()
 

@@ -42,11 +42,21 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
             logger.info("收到来自用户 {} 的消息: {}", username, message.getPayload());
             
             ChatMessage chatMessage = objectMapper.readValue(message.getPayload(), ChatMessage.class);
-            
+
             // 如果是加入消息，直接返回
             if ("joined".equals(chatMessage.getContent())) {
-                logger.debug("忽略加入消息");
                 return;
+            }
+
+            // 如果是检查用户消息，则处理并返回
+            if (MessageType.CHECK_USER.equals(chatMessage.getType())) {
+                handleCheckUserMessage(session, chatMessage);
+                return;
+            }
+
+            // 如果是添加联系人消息，发送通知给被添加的用户
+            if (MessageType.CONTACT_ADDED.equals(chatMessage.getType())) {
+                addContact(session, chatMessage);
             }
             
             // 更新消息状态为已发送
@@ -58,12 +68,12 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
             } else {
                 handlePrivateMessage(chatMessage);
             }
+
         } catch (Exception e) {
             logger.error("处理消息时发生错误", e);
             sendErrorMessage(session, "消息处理失败: " + e.getMessage());
         }
     }
-
 
     private void broadcastMessage(ChatMessage message) {
         try {
@@ -171,5 +181,104 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         joinMessage.setStatus(MessageStatus.SENT);
 
         broadcastMessage(joinMessage);
+    }
+
+    ////////////////////////////////////////////////////////////////////
+    /////////////////////////// 用户信息存储 ///////////////////////////
+    ////////////////////////////////////////////////////////////////////
+
+    // 添加用户存储
+    private final ConcurrentHashMap<String, UserInfo> registeredUsers = new ConcurrentHashMap<>();
+
+    // 添加用户信息类
+    public static class UserInfo {
+        private final String username;
+        private final WebSocketSession session;
+        
+        public UserInfo(String username, WebSocketSession session) {
+            this.username = username;
+            this.session = session;
+        }
+        
+        public String getUsername() { return username; }
+        public WebSocketSession getSession() { return session; }
+    }
+
+    // 添加用户查询方法
+    public boolean isUserExists(String username) {
+        return registeredUsers.containsKey(username) || sessions.containsKey(username);
+    }
+
+
+    private void handleCheckUserMessage(WebSocketSession session, ChatMessage message) {
+        String targetUsername = message.getContent();
+        boolean exists = sessions.containsKey(targetUsername);
+        
+        ChatMessage response = new ChatMessage();
+        response.setSenderId("System");
+        response.setType(MessageType.USER_RESPONSE);
+        response.setContent(Boolean.toString(exists));
+    
+        try {
+            String responseJson = objectMapper.writeValueAsString(response);
+            session.sendMessage(new TextMessage(responseJson));
+        } catch (Exception e) {
+            logger.error("Error sending user check response", e);
+        }
+    }
+    
+    private void addContact(WebSocketSession session, ChatMessage chatMessage) {
+        // 获取被添加者用户名
+        String targetUsername = chatMessage.getContent();
+        // 获取发送者用户名
+        String adderUsername = chatMessage.getSenderId();
+        
+        // 获取被添加者的session（admin的session）
+        WebSocketSession targetSession = sessions.get(targetUsername);
+        
+        // 创建通知消息 - 发给被添加的用户(admin)
+        ChatMessage notification = new ChatMessage();
+        notification.setId(System.currentTimeMillis());
+        notification.setSenderId(adderUsername);
+        notification.setContent(String.format("用户 %s 已将您添加为联系人", adderUsername));
+        notification.setRoomId("system");
+        notification.setTimestamp(System.currentTimeMillis());
+        notification.setType(MessageType.CONTACT_ADDED);
+        notification.setStatus(MessageStatus.SENT);
+
+        if (targetSession != null && targetSession.isOpen()) {
+            try {
+                String notificationJson = objectMapper.writeValueAsString(notification);
+                targetSession.sendMessage(new TextMessage(notificationJson));
+                logger.info("已向{}发送联系人添加通知: {}", targetUsername, notificationJson);
+            } catch (IOException e) {
+                logger.error("发送联系人通知失败: {}", e.getMessage());
+            }
+        } else {
+            logger.warn("目标用户 {} 不在线或session无效", targetUsername);
+        }
+
+        // 给发送者(user1)一个确认消息
+        ChatMessage confirmMessage = new ChatMessage();
+        confirmMessage.setId(System.currentTimeMillis() + 1);
+        confirmMessage.setSenderId("System");
+        confirmMessage.setContent(String.format("您已成功添加 %s 为联系人", targetUsername));
+        confirmMessage.setRoomId("system");
+        confirmMessage.setTimestamp(System.currentTimeMillis());
+        confirmMessage.setType(MessageType.SYSTEM_NOTIFICATION);
+        confirmMessage.setStatus(MessageStatus.SENT);
+
+        WebSocketSession senderSession = sessions.get(adderUsername);
+        if (senderSession != null && senderSession.isOpen()) {
+            try {
+                String confirmJson = objectMapper.writeValueAsString(confirmMessage);
+                senderSession.sendMessage(new TextMessage(confirmJson));
+                logger.info("已向{}发送添加确认消息: {}", adderUsername, confirmJson);
+            } catch (IOException e) {
+                logger.error("发送确认消息失败: {}", e.getMessage());
+            }
+        }
+        
+        return;
     }
 }
