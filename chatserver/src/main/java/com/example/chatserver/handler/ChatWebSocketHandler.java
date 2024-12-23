@@ -56,7 +56,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
 
             // 如果是添加联系人消息，发送通知给被添加的用户
             if (MessageType.CONTACT_ADDED.equals(chatMessage.getType())) {
-                addContact(session, chatMessage);
+                handleContactAdded(session, chatMessage);
             }
             
             // 更新消息状态为已发送
@@ -149,6 +149,9 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         leaveMessage.setSenderId("System");
         leaveMessage.setContent("用户 " + username + " 离开了聊天室");
         leaveMessage.setRoomId("public");
+        leaveMessage.setTimestamp(System.currentTimeMillis());
+        leaveMessage.setType(MessageType.SYSTEM_NOTIFICATION);
+        leaveMessage.setStatus(MessageStatus.SENT);
         broadcastMessage(leaveMessage);
     }
 
@@ -177,7 +180,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         joinMessage.setContent("用户 " + username + " 加入了聊天室");
         joinMessage.setRoomId("public");
         joinMessage.setTimestamp(System.currentTimeMillis());
-        joinMessage.setType(MessageType.TEXT);
+        joinMessage.setType(MessageType.SYSTEM_NOTIFICATION);
         joinMessage.setStatus(MessageStatus.SENT);
 
         broadcastMessage(joinMessage);
@@ -227,21 +230,21 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         }
     }
     
-    private void addContact(WebSocketSession session, ChatMessage chatMessage) {
+    private void handleContactAdded(WebSocketSession session, ChatMessage chatMessage) {
         // 获取被添加者用户名
         String targetUsername = chatMessage.getContent();
         // 获取发送者用户名
         String adderUsername = chatMessage.getSenderId();
         
-        // 获取被添加者的session（admin的session）
+        // 获取被添加者的session
         WebSocketSession targetSession = sessions.get(targetUsername);
         
-        // 创建通知消息 - 发给被添加的用户(admin)
+        // 创建通知消息 - 发给被添加的用户
         ChatMessage notification = new ChatMessage();
         notification.setId(System.currentTimeMillis());
         notification.setSenderId(adderUsername);
         notification.setContent(String.format("用户 %s 已将您添加为联系人", adderUsername));
-        notification.setRoomId("system");
+        notification.setRoomId("public");
         notification.setTimestamp(System.currentTimeMillis());
         notification.setType(MessageType.CONTACT_ADDED);
         notification.setStatus(MessageStatus.SENT);
@@ -258,12 +261,12 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
             logger.warn("目标用户 {} 不在线或session无效", targetUsername);
         }
 
-        // 给发送者(user1)一个确认消息
+        // 给发送者一个确认消息
         ChatMessage confirmMessage = new ChatMessage();
         confirmMessage.setId(System.currentTimeMillis() + 1);
         confirmMessage.setSenderId("System");
         confirmMessage.setContent(String.format("您已成功添加 %s 为联系人", targetUsername));
-        confirmMessage.setRoomId("system");
+        confirmMessage.setRoomId("public");
         confirmMessage.setTimestamp(System.currentTimeMillis());
         confirmMessage.setType(MessageType.SYSTEM_NOTIFICATION);
         confirmMessage.setStatus(MessageStatus.SENT);

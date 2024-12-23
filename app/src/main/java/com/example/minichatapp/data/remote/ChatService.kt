@@ -125,8 +125,10 @@ class ChatService @Inject constructor(
                                     nickname = adderUsername,
                                     addedAt = System.currentTimeMillis()
                                 )
-                                messageRepository.saveMessage(message)
                                 contactDao.insertContact(contact)
+                                message.senderId = "System"
+                                messageChannels[message.roomId]?.send(message)
+                                messageRepository.saveMessage(message)
                             }
                             else -> handleIncomingMessage(message)
                         }
@@ -179,12 +181,15 @@ class ChatService @Inject constructor(
                     }
                     MessageType.SYSTEM_NOTIFICATION -> {
                         // SYSTEM_NOTIFICATION 消息只用于系统通知，不需要存储
-                        if (message.senderId != "System") {
-                            messageRepository.saveMessage(message)
-                        }
+                        messageChannels[message.roomId]?.send(message)
+                        messageRepository.saveMessage(message)
+//                        if (message.senderId != "System") {
+//                            messageRepository.saveMessage(message)
+//                        }
                     }
                     MessageType.TEXT -> {
                         // 普通文本消息正常存储
+                        messageChannels[message.roomId]?.send(message)
                         messageRepository.saveMessage(message)
                     }
                     else -> {

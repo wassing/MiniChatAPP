@@ -11,7 +11,7 @@ import androidx.room.PrimaryKey
 data class ChatMessage(
     @PrimaryKey val id: Long = System.currentTimeMillis(),
     val roomId: String,
-    val senderId: String,
+    var senderId: String,
     val content: String,
     val timestamp: Long = System.currentTimeMillis(),
     val type: MessageType = MessageType.TEXT,

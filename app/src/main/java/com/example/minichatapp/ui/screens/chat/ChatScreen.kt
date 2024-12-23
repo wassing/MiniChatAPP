@@ -8,16 +8,21 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Done
+import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.minichatapp.domain.model.ChatMessage
 import com.example.minichatapp.domain.model.ChatRoom
+import com.example.minichatapp.domain.model.MessageStatus
 import com.example.minichatapp.domain.model.RoomType
 import java.text.SimpleDateFormat
 import java.util.*
@@ -138,22 +143,9 @@ fun ChatMessageItem(
         horizontalAlignment = if (message.senderId == "System") Alignment.CenterHorizontally
         else if (isCurrentUser) Alignment.End else Alignment.Start
     ) {
-        if (message.senderId == "System") {
-            // 系统消息样式
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                    .padding(horizontal = 12.dp, vertical = 6.dp)
-            ) {
-                Text(
-                    text = message.content,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        } else {
-            // 用户消息样式
+        // 用户消息样式
+        if (message.senderId != "System") {
+            // 用户名和时间
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -167,26 +159,57 @@ fun ChatMessageItem(
                 )
             }
 
+            // 消息气泡和状态图标的容器
+            Column(
+                horizontalAlignment = if (isCurrentUser) Alignment.End else Alignment.Start
+            ) {
+                // 消息气泡
+                Box(
+                    modifier = Modifier
+                        .clip(
+                            RoundedCornerShape(
+                                topStart = 16.dp,
+                                topEnd = 16.dp,
+                                bottomStart = if (isCurrentUser) 16.dp else 4.dp,
+                                bottomEnd = if (isCurrentUser) 4.dp else 16.dp
+                            )
+                        )
+                        .background(
+                            if (isCurrentUser) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.surfaceVariant
+                        )
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                ) {
+                    Text(
+                        text = message.content,
+                        color = if (isCurrentUser) MaterialTheme.colorScheme.onPrimary
+                        else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                // 状态图标在气泡下方
+                Row(
+                    modifier = Modifier.padding(top = 2.dp),
+                    horizontalArrangement = if (isCurrentUser) Arrangement.End else Arrangement.Start
+                ) {
+                    MessageStatusIcon(
+                        status = message.status,
+                        modifier = Modifier.padding(horizontal = 4.dp)
+                    )
+                }
+            }
+        } else {
+            // 系统消息样式
             Box(
                 modifier = Modifier
-                    .clip(
-                        RoundedCornerShape(
-                            topStart = 16.dp,
-                            topEnd = 16.dp,
-                            bottomStart = if (isCurrentUser) 16.dp else 4.dp,
-                            bottomEnd = if (isCurrentUser) 4.dp else 16.dp
-                        )
-                    )
-                    .background(
-                        if (isCurrentUser) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.surfaceVariant
-                    )
-                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
             ) {
                 Text(
                     text = message.content,
-                    color = if (isCurrentUser) MaterialTheme.colorScheme.onPrimary
-                    else MaterialTheme.colorScheme.onSurfaceVariant
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -196,4 +219,29 @@ fun ChatMessageItem(
 private fun formatTimestamp(timestamp: Long): String {
     val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
     return sdf.format(Date(timestamp))
+}
+
+@Composable
+fun MessageStatusIcon(
+    status: MessageStatus,
+    modifier: Modifier = Modifier
+) {
+    val icon = when (status) {
+        MessageStatus.SENDING -> Icons.Default.Schedule
+        MessageStatus.SENT -> Icons.Default.Done
+        MessageStatus.FAILED -> Icons.Default.Error
+    }
+
+    val tint = when (status) {
+        MessageStatus.SENDING -> Color.Gray
+        MessageStatus.SENT -> Color.Green
+        MessageStatus.FAILED -> Color.Red
+    }
+
+    Icon(
+        imageVector = icon,
+        contentDescription = status.name,
+        modifier = modifier.size(12.dp),
+        tint = tint
+    )
 }
