@@ -39,9 +39,15 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     protected void handleTextMessage(WebSocketSession session, TextMessage message) {
         try {
             String username = extractUsername(session);
-            logger.info("收到来自用户 {} 的消息: {}", username, message.getPayload());
             
             ChatMessage chatMessage = objectMapper.readValue(message.getPayload(), ChatMessage.class);
+
+            if (MessageType.IMAGE.equals(chatMessage.getType())) {
+                logger.info("收到来自用户 {} 的图片消息，长度: {}", username, chatMessage.getContent().length());
+            }
+            else {
+                logger.info("收到来自用户 {} 的消息: {}", username, chatMessage.getContent());
+            }
 
             // 如果是加入消息，直接返回
             if ("joined".equals(chatMessage.getContent())) {
@@ -61,7 +67,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
 
             // 如果是图片消息，记录图片长度
             if (MessageType.IMAGE.equals(chatMessage.getType())) {
-                logger.info("收到图片消息，长度: {}", chatMessage.getContent().length());
+                // TODO: 处理图片消息
             }
             
             // 更新消息状态为已发送
@@ -83,7 +89,11 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     private void broadcastMessage(ChatMessage message) {
         try {
             String messageJson = objectMapper.writeValueAsString(message);
-            logger.debug("广播消息: {}", messageJson);
+            if (MessageType.IMAGE.equals(message.getType())) {
+                logger.debug("广播图片消息");
+            } else {
+                logger.debug("广播消息: {}", messageJson);
+            }
             
             TextMessage textMessage = new TextMessage(messageJson);
             for (WebSocketSession session : sessions.values()) {

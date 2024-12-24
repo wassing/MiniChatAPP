@@ -78,6 +78,7 @@ class ChatViewModel @Inject constructor(
     fun sendImageMessage(base64Image: String) {
         viewModelScope.launch {
             try {
+                println("Image size: ${base64Image.length} bytes") // 添加日志
                 val currentRoom = currentRoom.value ?: throw IllegalStateException("No current room")
 
                 val message = ChatMessage(
@@ -88,15 +89,12 @@ class ChatViewModel @Inject constructor(
                     status = MessageStatus.SENDING
                 )
 
-                // 先保存到本地
-                val messageRepository = chatService.messageRepository
-                messageRepository.saveMessage(message)
-
                 // 发送到服务器
                 chatService.sendMessage(message)
 
             } catch (e: Exception) {
                 println("Error sending image: ${e.message}")
+                e.printStackTrace() // 添加堆栈跟踪以便调试
             }
         }
     }
