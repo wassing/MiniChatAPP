@@ -22,6 +22,8 @@ class ChatViewModel @Inject constructor(
     // 暴露ChatService的连接状态和当前房间
     val connectionState: StateFlow<ChatService.ConnectionState> = chatService.connectionState
     val currentRoom: StateFlow<ChatRoom?> = chatService.currentRoom
+    val currentUsername: String?
+        get() = chatService.currentUsername
 
     fun initChat(username: String, room: ChatRoom) {
         // 如果还没有连接，则先连接到聊天服务器
@@ -72,4 +74,31 @@ class ChatViewModel @Inject constructor(
         super.onCleared()
         chatService.disconnect()
     }
+
+    fun sendImageMessage(base64Image: String) {
+        viewModelScope.launch {
+            try {
+                val currentRoom = currentRoom.value ?: throw IllegalStateException("No current room")
+
+                val message = ChatMessage(
+                    roomId = currentRoom.id,
+                    senderId = currentUsername ?: throw IllegalStateException("User not logged in"),
+                    content = base64Image,
+                    type = MessageType.IMAGE,
+                    status = MessageStatus.SENDING
+                )
+
+                // 先保存到本地
+                val messageRepository = chatService.messageRepository
+                messageRepository.saveMessage(message)
+
+                // 发送到服务器
+                chatService.sendMessage(message)
+
+            } catch (e: Exception) {
+                println("Error sending image: ${e.message}")
+            }
+        }
+    }
+
 }

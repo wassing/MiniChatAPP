@@ -23,7 +23,7 @@ class ChatService @Inject constructor(
     private val client: OkHttpClient,
     private val gson: Gson,
     private val appSettings: AppSettings,
-    private val messageRepository: MessageRepository,
+    val messageRepository: MessageRepository,
     private val contactDao: ContactDao
 ) {
     private val TAG = "ChatService"  // 在类顶部定义

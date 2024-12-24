@@ -103,6 +103,7 @@ fun MainScreen(
                         onSendMessage = { content ->
                             chatViewModel.sendMessage(username, content)
                         },
+                        chatViewModel = chatViewModel,
                         isConnected = connectionState is ChatService.ConnectionState.Connected
                     )
                 }
@@ -128,6 +129,7 @@ fun MainScreen(
                     chatViewModel.leaveRoom()
                     navController?.popBackStack()
                 },
+                chatViewModel = chatViewModel,
                 isConnected = connectionState is ChatService.ConnectionState.Connected,
                 modifier = Modifier.padding(paddingValues)
             )

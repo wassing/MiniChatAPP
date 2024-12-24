@@ -11,7 +11,6 @@ java
             │  │      AppDatabase.kt
             │  │      AppSettings.kt
             │  │      ContactDao.kt
-            │  │      Converters.kt
             │  │      MessageDao.kt
             │  │      UserDao.kt
             │  │
@@ -33,6 +32,7 @@ java
             │          ChatMessage.kt
             │          ChatRoom.kt
             │          Contact.kt
+            │          Converters.kt
             │          User.kt
             │
             └─ui
@@ -40,6 +40,7 @@ java
                 │
                 ├─components
                 │      CommonComponents.kt
+                │      ImagePickerUtils.kt
                 │
                 ├─navigation
                 │      BottomNavItem.kt
@@ -55,6 +56,7 @@ java
                 │  ├─chat
                 │  │      ChatScreen.kt
                 │  │      ChatViewModel.kt
+                │  │      ImageUtils.kt
                 │  │
                 │  ├─contact
                 │  │      AddContactDislog.kt

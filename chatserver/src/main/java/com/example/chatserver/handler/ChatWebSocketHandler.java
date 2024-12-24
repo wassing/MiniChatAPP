@@ -58,6 +58,11 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
             if (MessageType.CONTACT_ADDED.equals(chatMessage.getType())) {
                 handleContactAdded(session, chatMessage);
             }
+
+            // 如果是图片消息，记录图片长度
+            if (MessageType.IMAGE.equals(chatMessage.getType())) {
+                logger.info("收到图片消息，长度: {}", chatMessage.getContent().length());
+            }
             
             // 更新消息状态为已发送
             chatMessage.setStatus(MessageStatus.SENT);
