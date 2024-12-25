@@ -15,55 +15,73 @@
 项目结构：
 
 ```
-main
- └── java
-      └── com.example.minichatapp
-           ├── data
-           │    ├── local
-           │    │    ├── AppDatabase.kt
-           │    │    ├── AppSettings.kt
-           │    │    └── UserDao.kt
-           │    ├── remote
-           │    │    └── ChatService.kt
-           │    └── repository
-           │         └── UserRepository.kt
-           ├── di
-           │    └── DatabaseModule.kt
-           ├── domain.model
-           │    ├── ChatMessage.kt
-           │    └── User.kt
-           ├── ui
-           │    ├── components
-           │    │    └── CommonComponents.kt
-           │    ├── screens
-           │    │    ├── auth
-           │    │    │    ├── AuthViewModel
-           │    │    │    ├── LoginScreen.kt
-           │    │    │    └── RegisterScreen.kt
-           │    │    ├── chat
-           │    │    │    ├── ChatScreen.kt
-           │    │    │    └── ChatMessageItem.kt
-           │    │    ├── contact
-           │    │    ├── settings
-           │    │    │    ├── SettingsScreen.kt
-           │    │    │    └── SettingsViewModel.kt
-           │    │    └── MainScreen.kt
-           │    ├── theme
-           │    │     ├── Color.kt
-           │    │     ├── Theme.kt
-           │    │     └── Type.kt
-           │    └── Navigation.kt
-           ├── MainActivity.kt
-           └── ProjectStructure.txt
+java
+ └─com
+    └─example
+        └─minichatapp
+            │  MainActivity.kt
+            │  MiniChatApp.kt
+            │  ProjectStructure.txt
+            ├─data
+            │  ├─local
+            │  │      AppDatabase.kt
+            │  │      AppSettings.kt
+            │  │      ContactDao.kt
+            │  │      MessageDao.kt
+            │  │      UserDao.kt
+            │  ├─remote
+            │  │      ChatService.kt
+            │  └─repository
+            │          ContactRepository.kt
+            │          MessageRepository.kt
+            │          UserRepository.kt
+            ├─di
+            │      AppModule.kt
+            │      DatabaseModule.kt
+            │      NetworkModule.kt
+            ├─domain
+            │  └─model
+            │          ChatMessage.kt
+            │          ChatRoom.kt
+            │          Contact.kt
+            │          Converters.kt
+            │          User.kt
+            └─ui
+                │  Navigation.kt
+                ├─components
+                │      CommonComponents.kt
+                │      ImagePickerUtils.kt
+                ├─navigation
+                │      BottomNavItem.kt
+                ├─screens
+                │  │  MainScreen.kt
+                │  ├─auth
+                │  │      AuthViewModel.kt
+                │  │      LoginScreen.kt
+                │  │      RegisterScreen.kt
+                │  ├─chat
+                │  │      ChatScreen.kt
+                │  │      ChatViewModel.kt
+                │  │      ImageUtils.kt
+                │  ├─contact
+                │  │      AddContactDislog.kt
+                │  │      ContactListScreen.kt
+                │  │      ContactScreen.kt
+                │  │      ContactViewModel.kt
+                │  └─settings
+                │          SettingsScreen.kt
+                │          SettingsViewModel.kt
+                └─theme
+                        Color.kt
+                        Theme.kt
+                        Type.kt
 ```
 
 ## TodoList
 
-1. 基本功能已经实现，注册界面应该有注册成功提示并延迟返回
-2. 给聊天界面添加一个返回按钮
-3. 增加图片库和图片发送功能
-4. 增加联系人功能
-5. 将用户信息转移到服务器存储
+1. Websocket服务器引线程池机制；
+2. 将用户信息转移到服务器存储；
+3. 添加用户个人简介、头像等功能。
 
 ## 应用示意图
 
@@ -77,5 +95,3 @@ main
 3. 聊天室界面
 
    ![image-20241129153431613](./assets/image-20241129153431613.png)
-
-请看当前的项目，其是一个基于API26+GroovyDSL+gradle=8.5开发的Android聊天APP，其中/chatserver中是一个使用SpringBoot框架搭建的websocket服务器端，请你先大致浏览一下项目，帮我给出一些改进意见

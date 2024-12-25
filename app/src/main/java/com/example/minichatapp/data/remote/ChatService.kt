@@ -41,6 +41,7 @@ class ChatService @Inject constructor(
     private val messageChannels = mutableMapOf<String, Channel<ChatMessage>>()
     private val _currentRoom = MutableStateFlow<ChatRoom?>(null)
     val currentRoom: StateFlow<ChatRoom?> = _currentRoom
+    private var _publicRoom : ChatRoom? = null
 
     private val _onlineUsers = MutableStateFlow<Set<String>>(emptySet())
     val onlineUsers: StateFlow<Set<String>> = _onlineUsers
@@ -109,7 +110,10 @@ class ChatService @Inject constructor(
                     try {
                         val message = gson.fromJson(text, ChatMessage::class.java)
 
-                        println("Received message: $message")
+                        if (message.type != MessageType.IMAGE)
+                            println("Received message: $message")
+                        else
+                            println("Received image message")
 
                         when (message.type) {
                             MessageType.USER_RESPONSE -> {
@@ -173,6 +177,12 @@ class ChatService @Inject constructor(
     private fun handleIncomingMessage(message: ChatMessage) {
         serviceScope.launch {
             try {
+                // 如果是自己发送的消息，不需要重复处理
+                if (message.senderId == currentUsername) {
+                    messageRepository.updateMessageStatus(message, message.status)
+                    return@launch
+                }
+
                 when (message.type) {
                     MessageType.USER_RESPONSE -> {
                         // USER_RESPONSE 消息只用于用户检查，不需要存储
@@ -189,6 +199,11 @@ class ChatService @Inject constructor(
                     }
                     MessageType.TEXT -> {
                         // 普通文本消息正常存储
+                        messageChannels[message.roomId]?.send(message)
+                        messageRepository.saveMessage(message)
+                    }
+                    MessageType.IMAGE -> {
+                        // 普通图片消息正常存储
                         messageChannels[message.roomId]?.send(message)
                         messageRepository.saveMessage(message)
                     }
@@ -257,7 +272,7 @@ class ChatService @Inject constructor(
     }
 
     fun leaveCurrentRoom() {
-        _currentRoom.value = null
+        _currentRoom.value = _publicRoom
     }
 
     fun getMessagesForRoom(roomId: String): Flow<List<ChatMessage>> {
@@ -271,12 +286,13 @@ class ChatService @Inject constructor(
     }
 
     private fun createPublicRoom(): ChatRoom {
-        return ChatRoom(
+        _publicRoom = ChatRoom(
             id = "public",
             type = RoomType.PUBLIC,
             name = "公共聊天室",
             participants = emptyList()
         )
+        return _publicRoom as ChatRoom
     }
 
     fun createPrivateRoom(participant: String): ChatRoom {
