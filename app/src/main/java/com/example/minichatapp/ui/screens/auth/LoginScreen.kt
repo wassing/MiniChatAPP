@@ -1,5 +1,9 @@
 package com.example.minichatapp.ui.screens.auth
 
+import android.content.Context
+import android.os.Build
+import androidx.annotation.RequiresApi
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -9,6 +13,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.minichatapp.ui.components.CommonButton
 import com.example.minichatapp.ui.components.CommonTextField
 
@@ -17,13 +23,29 @@ fun LoginScreen(
     onLoginClick: (String, String) -> Unit,
     onRegisterClick: () -> Unit,
     onSettingsClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: AuthViewModel = hiltViewModel()
 ) {
+    var rememberPassword by remember { mutableStateOf(false) }
+
     // 设置默认用户名和密码
-    var username by remember { mutableStateOf("") }    // 默认用户名，在发布前记得删掉
+    var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var showError by remember { mutableStateOf(false) }
+
+    val context = LocalContext.current
+
+    // 在组件首次加载时读取保存的登录信息
+    LaunchedEffect(Unit) {
+        val prefs = context.getSharedPreferences("login_prefs", Context.MODE_PRIVATE)
+        username = prefs.getString("username", "") ?: ""
+        // 只有在之前选择了记住密码的情况下才读取密码
+        if (prefs.getBoolean("remember_password", false)) {
+            password = prefs.getString("password", "") ?: ""
+            rememberPassword = true
+        }
+    }
 
     Column(
         modifier = modifier
@@ -63,6 +85,22 @@ fun LoginScreen(
             modifier = Modifier.padding(bottom = if (showError) 8.dp else 32.dp)
         )
 
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Checkbox(
+                checked = rememberPassword,
+                onCheckedChange = { rememberPassword = it }
+            )
+            Text(
+                text = "记住密码",
+                modifier = Modifier.clickable { rememberPassword = !rememberPassword }
+            )
+        }
+
         // Error message
         if (showError) {
             Text(
@@ -82,7 +120,18 @@ fun LoginScreen(
                     return@CommonButton
                 }
                 isLoading = true
-                // 模拟登录过程
+
+                // 保存登录信息
+                context.getSharedPreferences("login_prefs", Context.MODE_PRIVATE).edit().apply {
+                    putString("username", username)
+                    putBoolean("remember_password", rememberPassword)
+                    if (rememberPassword) {
+                        putString("password", password)
+                    } else {
+                        remove("password")
+                    }
+                    apply()
+                }
                 onLoginClick(username, password)
             },
             modifier = Modifier.padding(bottom = 16.dp)

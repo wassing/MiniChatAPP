@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.os.Build
 import android.graphics.BitmapFactory
 import android.util.Base64
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.material.icons.filled.BrokenImage
 import androidx.compose.ui.graphics.asImageBitmap
@@ -29,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.minichatapp.domain.model.ChatMessage
@@ -39,6 +41,7 @@ import com.example.minichatapp.domain.model.RoomType
 import com.example.minichatapp.ui.components.rememberImagePickerLauncher
 import com.example.minichatapp.ui.components.rememberPermissionLauncher
 import com.example.minichatapp.ui.screens.chat.ImageUtils.handleImageSelection
+import com.example.minichatapp.ui.theme.MiniChatAppTheme
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -368,4 +371,70 @@ fun MessageStatusIcon(
         modifier = modifier.size(12.dp),
         tint = tint
     )
+}
+
+
+
+// ChatScreen.kt
+@RequiresApi(Build.VERSION_CODES.S)
+@Preview(showBackground = true)
+@Composable
+fun ChatScreenPreview() {
+    val sampleMessages = listOf(
+        ChatMessage(
+            id = 1L,
+            roomId = "public",
+            senderId = "user1",
+            content = "Hello, world!",
+            timestamp = System.currentTimeMillis(),
+            type = MessageType.TEXT,
+            status = MessageStatus.SENT
+        ),
+        ChatMessage(
+            id = 2L,
+            roomId = "public",
+            senderId = "System",
+            content = "Welcome to the chat!",
+            timestamp = System.currentTimeMillis(),
+            type = MessageType.SYSTEM_NOTIFICATION,
+            status = MessageStatus.SENT
+        )
+    )
+
+    val sampleRoom = ChatRoom(
+        id = "public",
+        type = RoomType.PUBLIC,
+        name = "Public Chat",
+        participants = listOf("user1", "user2")
+    )
+
+    MiniChatAppTheme {
+        ChatScreen(
+            messages = sampleMessages,
+            currentUsername = "user1",
+            chatRoom = sampleRoom,
+            onSendMessage = { },
+            isConnected = true
+        )
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.S)
+@Preview(showBackground = true)
+@Composable
+fun ChatMessageItemPreview() {
+    MiniChatAppTheme {
+        ChatMessageItem(
+            message = ChatMessage(
+                id = 1L,
+                roomId = "public",
+                senderId = "user1",
+                content = "Hello, this is a sample message",
+                timestamp = System.currentTimeMillis(),
+                type = MessageType.TEXT,
+                status = MessageStatus.SENT
+            ),
+            isCurrentUser = true
+        )
+    }
 }

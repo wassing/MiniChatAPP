@@ -1,13 +1,17 @@
 package com.example.minichatapp.ui.screens.settings
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.minichatapp.ui.components.CommonTextField
+import com.example.minichatapp.ui.theme.MiniChatAppTheme
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -116,5 +120,21 @@ fun SettingsScreen(
                 Text("保存")
             }
         }
+    }
+}
+
+// SettingsScreen.kt
+@RequiresApi(Build.VERSION_CODES.S)
+@Preview(showBackground = true)
+@Composable
+fun SettingsScreenPreview() {
+    MiniChatAppTheme {
+        SettingsScreen(
+            onNavigateBack = { },
+            initialServerHost = "10.0.2.2",
+            initialServerPort = 8080,
+            initialReconnectInterval = 5000L,
+            onSettingsChanged = { _, _, _ -> }
+        )
     }
 }

@@ -1,11 +1,15 @@
 package com.example.minichatapp.ui.screens.contact
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.minichatapp.ui.components.CommonTextField
+import com.example.minichatapp.ui.theme.MiniChatAppTheme
 
 @Composable
 fun AddContactDialog(
@@ -54,4 +58,33 @@ fun AddContactDialog(
             }
         }
     )
+}
+
+// AddContactDialog.kt
+@RequiresApi(Build.VERSION_CODES.S)
+@Preview(showBackground = true)
+@Composable
+fun AddContactDialogPreview() {
+    MiniChatAppTheme {
+        AddContactDialog(
+            onDismiss = { },
+            onConfirm = { },
+            isLoading = false,
+            errorMessage = null
+        )
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.S)
+@Preview(showBackground = true)
+@Composable
+fun AddContactDialogWithErrorPreview() {
+    MiniChatAppTheme {
+        AddContactDialog(
+            onDismiss = { },
+            onConfirm = { },
+            isLoading = false,
+            errorMessage = "用户不存在"
+        )
+    }
 }

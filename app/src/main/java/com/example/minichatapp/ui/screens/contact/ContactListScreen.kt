@@ -1,5 +1,7 @@
 package com.example.minichatapp.ui.screens.contact
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,8 +14,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.minichatapp.domain.model.Contact
+import com.example.minichatapp.ui.theme.MiniChatAppTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -143,4 +147,54 @@ fun ContactItem(
         }
     }
     Divider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.12f))
+}
+
+
+// ContactListScreen.kt
+@RequiresApi(Build.VERSION_CODES.S)
+@Preview(showBackground = true)
+@Composable
+fun ContactItemPreview() {
+    MiniChatAppTheme {
+        ContactItem(
+            contact = Contact(
+                username = "user1",
+                nickname = "User One",
+                lastMessage = "Hello!",
+                lastMessageTime = System.currentTimeMillis(),
+                unreadCount = 2
+            ),
+            onClick = { }
+        )
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.S)
+@Preview(showBackground = true)
+@Composable
+fun ContactListScreenPreview() {
+    val sampleContacts = listOf(
+        Contact(
+            username = "user1",
+            nickname = "User One",
+            lastMessage = "Hello!",
+            lastMessageTime = System.currentTimeMillis(),
+            unreadCount = 2
+        ),
+        Contact(
+            username = "user2",
+            nickname = "User Two",
+            lastMessage = "How are you?",
+            lastMessageTime = System.currentTimeMillis() - 3600000,
+            unreadCount = 0
+        )
+    )
+
+    MiniChatAppTheme {
+        ContactListScreen(
+            contacts = sampleContacts,
+            onContactClick = { },
+            onAddContactClick = { }
+        )
+    }
 }

@@ -1,14 +1,18 @@
 package com.example.minichatapp.ui.screens.auth
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.minichatapp.ui.components.CommonButton
 import com.example.minichatapp.ui.components.CommonTextField
+import com.example.minichatapp.ui.theme.MiniChatAppTheme
 
 @Composable
 fun RegisterScreen(
@@ -115,5 +119,18 @@ fun RegisterScreen(
         ) {
             Text("已有账号？返回登录")
         }
+    }
+}
+
+// RegisterScreen.kt
+@RequiresApi(Build.VERSION_CODES.S)
+@Preview(showBackground = true)
+@Composable
+fun RegisterScreenPreview() {
+    MiniChatAppTheme {
+        RegisterScreen(
+            onRegisterClick = { _, _, _ -> },
+            onBackToLogin = { }
+        )
     }
 }
