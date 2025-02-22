@@ -7,7 +7,6 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.minichatapp.data.local.AppDatabase
 import com.example.minichatapp.data.local.ContactDao
 import com.example.minichatapp.data.local.MessageDao
-import com.example.minichatapp.data.local.UserDao
 import com.example.minichatapp.data.repository.MessageRepository
 import com.example.minichatapp.domain.model.User
 import dagger.Module
@@ -64,10 +63,6 @@ object DatabaseModule {
             .build()
     }
 
-    @Provides
-    fun provideUserDao(database: AppDatabase): UserDao {
-        return database.userDao()
-    }
 
     @Provides
     fun provideContactDao(database: AppDatabase): ContactDao {

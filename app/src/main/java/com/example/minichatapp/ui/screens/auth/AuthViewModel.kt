@@ -2,7 +2,7 @@ package com.example.minichatapp.ui.screens.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.minichatapp.data.repository.UserRepository
+import com.example.minichatapp.data.remote.ChatService
 import com.example.minichatapp.domain.model.User
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,7 +12,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val userRepository: UserRepository
+    private val chatService: ChatService
 ) : ViewModel() {
 
     private val _loginState = MutableStateFlow<LoginState>(LoginState.Initial)
@@ -24,10 +24,18 @@ class AuthViewModel @Inject constructor(
     fun login(username: String, password: String) {
         viewModelScope.launch {
             _loginState.value = LoginState.Loading
-            val result = userRepository.loginUser(username, password)
-            _loginState.value = when {
-                result.isSuccess -> LoginState.Success(result.getOrNull()!!)
-                else -> LoginState.Error(result.exceptionOrNull()?.message ?: "未知错误")
+            try {
+                val result = chatService.login(username, password)
+                result.fold(
+                    onSuccess = {
+                        _loginState.value = LoginState.Success(User(username = username, password = password))
+                    },
+                    onFailure = { e ->
+                        _loginState.value = LoginState.Error(e.message ?: "登录失败")
+                    }
+                )
+            } catch (e: Exception) {
+                _loginState.value = LoginState.Error(e.message ?: "登录失败")
             }
         }
     }
@@ -35,10 +43,11 @@ class AuthViewModel @Inject constructor(
     fun register(username: String, password: String) {
         viewModelScope.launch {
             _registerState.value = RegisterState.Loading
-            val result = userRepository.registerUser(username, password)
-            _registerState.value = when {
-                result.isSuccess -> RegisterState.Success(result.getOrNull()!!)
-                else -> RegisterState.Error(result.exceptionOrNull()?.message ?: "未知错误")
+            try {
+                val result = chatService.register(username, password)
+                _registerState.value = RegisterState.Success(User(username = username, password = password))
+            } catch (e: Exception) {
+                _registerState.value = RegisterState.Error(e.message ?: "注册失败")
             }
         }
     }

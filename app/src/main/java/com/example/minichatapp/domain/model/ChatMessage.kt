@@ -19,12 +19,16 @@ data class ChatMessage(
 )
 
 enum class MessageType {
-    TEXT,
-    IMAGE,
-    CHECK_USER,
-    USER_RESPONSE,
-    CONTACT_ADDED,
-    SYSTEM_NOTIFICATION
+    TEXT,           // 普通文本消息
+    IMAGE,          // 图片消息
+    CHECK_USER,     // 检查用户是否存在
+    USER_RESPONSE,  // 用户查询响应
+    CONTACT_ADDED,   // 添加联系人通知
+    SYSTEM_NOTIFICATION, // 系统通知
+    SYSTEM_NOTIFICATION2, // 系统通知2
+    REGISTER,        // 注册请求
+    LOGIN,          // 登录请求
+    AUTH_RESPONSE   // 认证响应
 }
 
 enum class MessageStatus {

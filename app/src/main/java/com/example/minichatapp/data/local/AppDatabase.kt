@@ -21,7 +21,6 @@ import com.example.minichatapp.domain.model.User
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
-    abstract fun userDao(): UserDao
     abstract fun contactDao(): ContactDao
     abstract fun messageDao(): MessageDao
 

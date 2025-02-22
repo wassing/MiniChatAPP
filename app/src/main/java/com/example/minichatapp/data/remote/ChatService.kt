@@ -10,6 +10,8 @@ import com.example.minichatapp.domain.model.Contact
 import com.example.minichatapp.domain.model.MessageStatus
 import com.example.minichatapp.domain.model.MessageType
 import com.example.minichatapp.domain.model.RoomType
+import androidx.lifecycle.viewModelScope
+import com.google.ar.core.Frame
 import com.google.gson.Gson
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
@@ -45,6 +47,8 @@ class ChatService @Inject constructor(
 
     private val _onlineUsers = MutableStateFlow<Set<String>>(emptySet())
     val onlineUsers: StateFlow<Set<String>> = _onlineUsers
+
+    private val authResponseChannel = Channel<String>(Channel.BUFFERED)
 
     fun connectToChat(username: String) {
         this._currentUsername = username
@@ -184,6 +188,9 @@ class ChatService @Inject constructor(
                 }
 
                 when (message.type) {
+                    MessageType.AUTH_RESPONSE -> {
+                        authResponseChannel.send(message.content)
+                    }
                     MessageType.USER_RESPONSE -> {
                         // USER_RESPONSE 消息只用于用户检查，不需要存储
                         val exists = message.content.toBoolean()
@@ -345,6 +352,70 @@ class ChatService @Inject constructor(
     }
 
     private val userCheckResponses = Channel<Boolean>(Channel.BUFFERED)
+
+
+    /////////////////////////////////////////////////
+    // 用户验证相关
+    /////////////////////////////////////////////////
+    suspend fun login(username: String, password: String): Result<Unit> {
+        if (_connectionState.value !is ConnectionState.Connected) {
+            return Result.failure(Exception("未连接到服务器"))
+        }
+
+        return try {
+            val message = ChatMessage(
+                roomId = "auth",
+                senderId = username,
+                content = "$username:$password",
+                type = MessageType.LOGIN
+            )
+            val response = sendAuthMessage(message) // 新增方法等待认证响应
+            when (response) {
+                "LOGIN_SUCCESS" -> Result.success(Unit)
+                "LOGIN_FAILED" -> Result.failure(Exception("用户名或密码错误"))
+                else -> Result.failure(Exception("登录失败，请稍后重试"))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception("网络错误，请检查网络连接"))
+        }
+    }
+
+    suspend fun register(username: String, password: String): Result<Unit> {
+        if (_connectionState.value !is ConnectionState.Connected) {
+            return Result.failure(Exception("未连接到服务器"))
+        }
+
+        return try {
+            val message = ChatMessage(
+                roomId = "auth",
+                senderId = username,
+                content = "$username:$password",
+                type = MessageType.REGISTER
+            )
+            val response = sendAuthMessage(message)
+            when (response) {
+                "REGISTRATION_SUCCESS" -> Result.success(Unit)
+                "USERNAME_EXISTS" -> Result.failure(Exception("用户名已存在"))
+                else -> Result.failure(Exception("注册失败，请稍后重试"))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception("网络错误，请检查网络连接"))
+        }
+    }
+
+    private suspend fun sendAuthMessage(message: ChatMessage): String {
+        println("Sending auth message: ${message.type}")  // 添加日志
+        return try {
+            withTimeout(2000) { // 2秒超时
+                webSocket?.send(gson.toJson(message))
+                    ?: throw Exception("WebSocket 未连接")
+                // 等待服务器响应
+                authResponseChannel.receive()
+            }
+        } catch (e: TimeoutCancellationException) {
+            throw Exception("认证超时，请稍后重试")
+        }
+    }
 
     suspend fun checkUserExists(username: String): Boolean {
         if (_connectionState.value !is ConnectionState.Connected) {

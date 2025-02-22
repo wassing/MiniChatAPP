@@ -1,7 +1,6 @@
 package com.example.minichatapp.data.repository
 
 import com.example.minichatapp.data.local.ContactDao
-import com.example.minichatapp.data.local.UserDao
 import com.example.minichatapp.data.remote.ChatService
 import com.example.minichatapp.domain.model.ChatMessage
 import com.example.minichatapp.domain.model.Contact
@@ -11,7 +10,6 @@ import javax.inject.Inject
 
 class ContactRepository @Inject constructor(
     private val contactDao: ContactDao,
-    private val userDao: UserDao,
     private val chatService: ChatService
 ) {
     // 获取所有联系人，按最后消息时间排序

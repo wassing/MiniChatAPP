@@ -1,6 +1,7 @@
 package com.example.minichatapp.ui.screens.auth
 
 import android.os.Build
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -10,14 +11,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.minichatapp.ui.components.CommonButton
 import com.example.minichatapp.ui.components.CommonTextField
 import com.example.minichatapp.ui.theme.MiniChatAppTheme
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.delay
 
 @Composable
 fun RegisterScreen(
     onRegisterClick: (String, String, String) -> Unit,
     onBackToLogin: () -> Unit,
+    viewModel: AuthViewModel = hiltViewModel(),
     modifier: Modifier = Modifier
 ) {
     var username by remember { mutableStateOf("") }
@@ -25,6 +30,28 @@ fun RegisterScreen(
     var confirmPassword by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    val context = LocalContext.current
+    val registerState by viewModel.registerState.collectAsState()
+    val loginState by viewModel.loginState.collectAsState()
+
+    LaunchedEffect(registerState) {
+        when (registerState) {
+            is AuthViewModel.RegisterState.Success -> {
+                Toast.makeText(context, "注册成功", Toast.LENGTH_SHORT).show()
+                delay(1000) // 延迟1秒
+                onBackToLogin()
+            }
+            is AuthViewModel.RegisterState.Error -> {
+                Toast.makeText(
+                    context,
+                    (registerState as AuthViewModel.RegisterState.Error).message,
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+            else -> {}
+        }
+    }
 
     Column(
         modifier = modifier
@@ -106,11 +133,12 @@ fun RegisterScreen(
                     else -> {
                         isLoading = true
                         // 调用注册回调
-                        onRegisterClick(username, password, confirmPassword)
+                        viewModel.register(username, password)
                     }
                 }
             },
-            modifier = Modifier.padding(bottom = 16.dp)
+            modifier = Modifier.padding(bottom = 16.dp),
+            enabled = loginState !is AuthViewModel.LoginState.Loading
         )
 
         // 返回登录按钮

@@ -40,7 +40,7 @@ fun AppNavigation() {
     ) {
         composable(Screen.Login.route) {
             LoginScreen(
-                onLoginClick = { username, password ->
+                onLoginSuccess = { username ->
                     navController.navigate(Screen.Main.createRoute(username)) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }

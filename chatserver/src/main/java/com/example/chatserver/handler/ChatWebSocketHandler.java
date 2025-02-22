@@ -30,7 +30,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         sessions.put(username, session);
         
         // 首先发送私人欢迎消息
-        sendPrivateWelcomeMessage(session);
+//        sendPrivateWelcomeMessage(session);
         // 然后广播用户加入消息
         broadcastUserJoinMessage(username);
     }
@@ -41,12 +41,21 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
             String username = extractUsername(session);
             
             ChatMessage chatMessage = objectMapper.readValue(message.getPayload(), ChatMessage.class);
-
+            logger.info("收到消息, 类型为: {}", chatMessage.getType());
             if (MessageType.IMAGE.equals(chatMessage.getType())) {
                 logger.info("收到来自用户 {} 的图片消息，长度: {}", username, chatMessage.getContent().length());
             }
             else {
                 logger.info("收到来自用户 {} 的消息: {}", username, chatMessage.getContent());
+            }
+
+            // 处理认证消息
+            if (chatMessage.getType() == MessageType.LOGIN) {
+                handleLogin(session, chatMessage);
+                return;
+            } else if (chatMessage.getType() == MessageType.REGISTER) {
+                handleRegistration(session, chatMessage);
+                return;
             }
 
             // 如果是加入消息，直接返回
@@ -170,23 +179,23 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         broadcastMessage(leaveMessage);
     }
 
-    private void sendPrivateWelcomeMessage(WebSocketSession session) {
-        ChatMessage welcomeMessage = new ChatMessage();
-        welcomeMessage.setId(System.currentTimeMillis());
-        welcomeMessage.setSenderId("System");
-        welcomeMessage.setContent("欢迎加入聊天室");
-        welcomeMessage.setRoomId("public");
-        welcomeMessage.setTimestamp(System.currentTimeMillis());
-        welcomeMessage.setType(MessageType.TEXT);
-        welcomeMessage.setStatus(MessageStatus.SENT);
-
-        try {
-            String welcomeJson = objectMapper.writeValueAsString(welcomeMessage);
-            session.sendMessage(new TextMessage(welcomeJson));
-        } catch (IOException e) {
-            logger.error("Failed to send welcome message", e);
-        }
-    }
+//    private void sendPrivateWelcomeMessage(WebSocketSession session) {
+//        ChatMessage welcomeMessage = new ChatMessage();
+//        welcomeMessage.setId(System.currentTimeMillis());
+//        welcomeMessage.setSenderId("System");
+//        welcomeMessage.setContent("欢迎加入聊天室");
+//        welcomeMessage.setRoomId("public");
+//        welcomeMessage.setTimestamp(System.currentTimeMillis());
+//        welcomeMessage.setType(MessageType.TEXT);
+//        welcomeMessage.setStatus(MessageStatus.SENT);
+//
+//        try {
+//            String welcomeJson = objectMapper.writeValueAsString(welcomeMessage);
+//            session.sendMessage(new TextMessage(welcomeJson));
+//        } catch (IOException e) {
+//            logger.error("Failed to send welcome message", e);
+//        }
+//    }
 
     private void broadcastUserJoinMessage(String username) {
         ChatMessage joinMessage = new ChatMessage();
@@ -211,20 +220,75 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     // 添加用户信息类
     public static class UserInfo {
         private final String username;
-        private final WebSocketSession session;
+        private final String password;
         
-        public UserInfo(String username, WebSocketSession session) {
+        public UserInfo(String username, String password) {
             this.username = username;
-            this.session = session;
+            this.password = password;
         }
         
         public String getUsername() { return username; }
-        public WebSocketSession getSession() { return session; }
+        public String getPassword() { return password; }
     }
 
     // 添加用户查询方法
     public boolean isUserExists(String username) {
         return registeredUsers.containsKey(username) || sessions.containsKey(username);
+    }
+
+    private void sendAuthResponse(WebSocketSession session, String response) {
+        try {
+            ChatMessage authResponse = new ChatMessage();
+            authResponse.setType(MessageType.AUTH_RESPONSE);
+            authResponse.setContent(response);
+            authResponse.setSenderId("System");
+            
+            String responseJson = objectMapper.writeValueAsString(authResponse);
+            session.sendMessage(new TextMessage(responseJson));
+        } catch (IOException e) {
+            logger.error("发送认证响应失败", e);
+        }
+    }
+
+    private void handleRegistration(WebSocketSession session, ChatMessage message) {
+        try {
+            String[] parts = message.getContent().split(":");
+            String username = parts[0];
+            String password = parts[1];
+            
+            if (isUserExists(username)) {
+                sendAuthResponse(session, "USERNAME_EXISTS");
+                return;
+            }
+            
+            registeredUsers.put(username, new UserInfo(username, password));
+            sendAuthResponse(session, "REGISTRATION_SUCCESS");
+            logger.info("用户 {} 注册成功", username);
+            
+        } catch (Exception e) {
+            logger.error("注册失败", e);
+            sendAuthResponse(session, "REGISTRATION_FAILED");
+        }
+    }
+
+    private void handleLogin(WebSocketSession session, ChatMessage message) {
+        try {
+            String[] parts = message.getContent().split(":");
+            String username = parts[0];
+            String password = parts[1];
+            
+            UserInfo userInfo = registeredUsers.get(username);
+            if (userInfo != null && userInfo.getPassword().equals(password)) {
+                sendAuthResponse(session, "LOGIN_SUCCESS");
+                logger.info("用户 {} 登录成功", username);
+            } else {
+                sendAuthResponse(session, "LOGIN_FAILED");
+                logger.info("用户 {} 登录失败", username);
+            }
+        } catch (Exception e) {
+            logger.error("登录失败", e);
+            sendAuthResponse(session, "LOGIN_FAILED");
+        }
     }
 
 

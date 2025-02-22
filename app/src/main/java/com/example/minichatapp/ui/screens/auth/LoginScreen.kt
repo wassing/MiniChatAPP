@@ -1,8 +1,7 @@
 package com.example.minichatapp.ui.screens.auth
 
 import android.content.Context
-import android.os.Build
-import androidx.annotation.RequiresApi
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -20,7 +19,7 @@ import com.example.minichatapp.ui.components.CommonTextField
 
 @Composable
 fun LoginScreen(
-    onLoginClick: (String, String) -> Unit,
+    onLoginSuccess: (String) -> Unit,
     onRegisterClick: () -> Unit,
     onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -31,10 +30,10 @@ fun LoginScreen(
     // 设置默认用户名和密码
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(false) }
     var showError by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
+    val loginState by viewModel.loginState.collectAsState()
 
     // 在组件首次加载时读取保存的登录信息
     LaunchedEffect(Unit) {
@@ -44,6 +43,32 @@ fun LoginScreen(
         if (prefs.getBoolean("remember_password", false)) {
             password = prefs.getString("password", "") ?: ""
             rememberPassword = true
+        }
+    }
+
+    LaunchedEffect(loginState) {
+        when (loginState) {
+            is AuthViewModel.LoginState.Success -> {
+                val user = (loginState as AuthViewModel.LoginState.Success).user
+                if (rememberPassword) {
+                    // 保存登录信息
+                    val prefs = context.getSharedPreferences("login_prefs", Context.MODE_PRIVATE)
+                    prefs.edit()
+                        .putString("username", username)
+                        .putString("password", password)
+                        .putBoolean("remember_password", true)
+                        .apply()
+                }
+                onLoginSuccess(user.username)  // 成功后调用回调
+            }
+            is AuthViewModel.LoginState.Error -> {
+                Toast.makeText(
+                    context,
+                    (loginState as AuthViewModel.LoginState.Error).message,
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+            else -> {}
         }
     }
 
@@ -113,27 +138,15 @@ fun LoginScreen(
 
         // Login button
         CommonButton(
-            text = if (isLoading) "登录中..." else "登录",
+            text = if (loginState is AuthViewModel.LoginState.Loading) "登录中..." else "登录",
             onClick = {
                 if (username.isBlank() || password.isBlank()) {
-                    showError = true
+                    Toast.makeText(context, "用户名和密码不能为空", Toast.LENGTH_SHORT).show()
                     return@CommonButton
                 }
-                isLoading = true
-
-                // 保存登录信息
-                context.getSharedPreferences("login_prefs", Context.MODE_PRIVATE).edit().apply {
-                    putString("username", username)
-                    putBoolean("remember_password", rememberPassword)
-                    if (rememberPassword) {
-                        putString("password", password)
-                    } else {
-                        remove("password")
-                    }
-                    apply()
-                }
-                onLoginClick(username, password)
+                viewModel.login(username, password)
             },
+            enabled = loginState !is AuthViewModel.LoginState.Loading,
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
