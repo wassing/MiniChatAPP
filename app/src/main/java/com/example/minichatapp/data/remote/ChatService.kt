@@ -50,6 +50,12 @@ class ChatService @Inject constructor(
 
     private val authResponseChannel = Channel<String>(Channel.BUFFERED)
 
+    fun initConnection() {
+        if (_connectionState.value !is ConnectionState.Connected) {
+            connectWebSocket()
+        }
+    }
+
     fun connectToChat(username: String) {
         this._currentUsername = username
         connectWebSocket()
@@ -64,7 +70,7 @@ class ChatService @Inject constructor(
             try {
                 val host = appSettings.serverHost.first()
                 val port = appSettings.serverPort.first()
-                val url = "ws://$host:$port/chat?username=$currentUsername"
+                val url = "ws://$host:$port/chat"
 
                 println("Connecting to WebSocket: $url")
 
@@ -79,7 +85,6 @@ class ChatService @Inject constructor(
                 webSocket = null
 
                 webSocket = client.newWebSocket(request, createWebSocketListener())
-                println("WebSocket connection initiated")
             } catch (e: Exception) {
                 println("WebSocket connection failed: ${e.message}")
                 _connectionState.value = ConnectionState.Failed("连接失败: ${e.message}")
@@ -102,7 +107,7 @@ class ChatService @Inject constructor(
                         roomId = "public",
                         senderId = currentUsername ?: "unknown",
                         content = "joined",
-                        type = MessageType.TEXT
+                        type = MessageType.SYSTEM_NOTIFICATION
                     )
                     println("Sending join message: ${gson.toJson(message)}")
                     val sent = webSocket.send(gson.toJson(message))
@@ -136,7 +141,7 @@ class ChatService @Inject constructor(
                                 contactDao.insertContact(contact)
                                 message.senderId = "System"
                                 messageChannels[message.roomId]?.send(message)
-                                messageRepository.saveMessage(message)
+//                                messageRepository.saveMessage(message)
                             }
                             else -> handleIncomingMessage(message)
                         }
@@ -199,7 +204,7 @@ class ChatService @Inject constructor(
                     MessageType.SYSTEM_NOTIFICATION -> {
                         // SYSTEM_NOTIFICATION 消息只用于系统通知，不需要存储
                         messageChannels[message.roomId]?.send(message)
-                        messageRepository.saveMessage(message)
+//                        messageRepository.saveMessage(message)
 //                        if (message.senderId != "System") {
 //                            messageRepository.saveMessage(message)
 //                        }
@@ -331,9 +336,9 @@ class ChatService @Inject constructor(
     private fun startReconnectJob() {
         reconnectJob?.cancel()
         reconnectJob = serviceScope.launch {
-            val interval = appSettings.reconnectInterval.first()
-            delay(interval)
-            if (_connectionState.value !is ConnectionState.Connected) {
+            while (_connectionState.value !is ConnectionState.Connected) {
+                delay(5000) // 每5秒重试一次
+                println("尝试重新连接...")
                 connectWebSocket()
             }
         }
@@ -403,17 +408,36 @@ class ChatService @Inject constructor(
         }
     }
 
-    private suspend fun sendAuthMessage(message: ChatMessage): String {
-        println("Sending auth message: ${message.type}")  // 添加日志
+    suspend fun sendAuthMessage(message: ChatMessage): String {
+        println("尝试发送认证消息: ${message.type}")
+
+        // 检查连接状态
+        if (_connectionState.value !is ConnectionState.Connected) {
+            throw Exception("未连接到服务器")
+        }
+
         return try {
-            withTimeout(2000) { // 2秒超时
-                webSocket?.send(gson.toJson(message))
-                    ?: throw Exception("WebSocket 未连接")
-                // 等待服务器响应
-                authResponseChannel.receive()
+            withTimeout(5000) { // 5秒超时
+                val messageJson = gson.toJson(message)
+                println("发送消息: $messageJson")
+
+                val sent = webSocket?.send(messageJson)
+                if (sent != true) {
+                    throw Exception("消息发送失败")
+                }
+
+                // 等待响应
+                println("等待服务器响应...")
+                val response = authResponseChannel.receive()
+                println("收到服务器响应: $response")
+                response
             }
         } catch (e: TimeoutCancellationException) {
+            println("认证超时")
             throw Exception("认证超时，请稍后重试")
+        } catch (e: Exception) {
+            println("发送认证消息失败: ${e.message}")
+            throw e
         }
     }
 

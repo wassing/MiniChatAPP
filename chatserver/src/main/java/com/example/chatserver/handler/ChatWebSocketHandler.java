@@ -41,7 +41,6 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
             String username = extractUsername(session);
             
             ChatMessage chatMessage = objectMapper.readValue(message.getPayload(), ChatMessage.class);
-            logger.info("收到消息, 类型为: {}", chatMessage.getType());
             if (MessageType.IMAGE.equals(chatMessage.getType())) {
                 logger.info("收到来自用户 {} 的图片消息，长度: {}", username, chatMessage.getContent().length());
             }
@@ -60,6 +59,11 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
 
             // 如果是加入消息，直接返回
             if ("joined".equals(chatMessage.getContent())) {
+                return;
+            }
+
+            // 如果是系统信息，直接返回
+            if (MessageType.SYSTEM_NOTIFICATION.equals(chatMessage.getType())) {
                 return;
             }
 

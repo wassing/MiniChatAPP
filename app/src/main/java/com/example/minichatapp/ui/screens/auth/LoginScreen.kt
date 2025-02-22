@@ -14,6 +14,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModel
+import com.example.minichatapp.data.remote.ChatService
 import com.example.minichatapp.ui.components.CommonButton
 import com.example.minichatapp.ui.components.CommonTextField
 
@@ -23,7 +25,7 @@ fun LoginScreen(
     onRegisterClick: () -> Unit,
     onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: AuthViewModel = hiltViewModel()
+    viewModel: AuthViewModel = hiltViewModel(),
 ) {
     var rememberPassword by remember { mutableStateOf(false) }
 
@@ -34,6 +36,7 @@ fun LoginScreen(
 
     val context = LocalContext.current
     val loginState by viewModel.loginState.collectAsState()
+    val connectionState by viewModel.connectionState.collectAsState() // 从 ViewModel 获取连接状态
 
     // 在组件首次加载时读取保存的登录信息
     LaunchedEffect(Unit) {
@@ -59,14 +62,35 @@ fun LoginScreen(
                         .putBoolean("remember_password", true)
                         .apply()
                 }
-                onLoginSuccess(user.username)  // 成功后调用回调
+                onLoginSuccess(user.username)
             }
+
             is AuthViewModel.LoginState.Error -> {
                 Toast.makeText(
                     context,
                     (loginState as AuthViewModel.LoginState.Error).message,
                     Toast.LENGTH_SHORT
                 ).show()
+            }
+
+            else -> {}
+        }
+    }
+
+    LaunchedEffect(connectionState) {
+        when (connectionState) {
+            is ChatService.ConnectionState.Failed -> {
+                Toast.makeText(
+                    context,
+                    "无法连接到服务器：${(connectionState as ChatService.ConnectionState.Failed).message}",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+            is ChatService.ConnectionState.Connected -> {
+                println("已连接到服务器")
+            }
+            is ChatService.ConnectionState.Connecting -> {
+                println("正在连接服务器...")
             }
             else -> {}
         }
@@ -138,7 +162,11 @@ fun LoginScreen(
 
         // Login button
         CommonButton(
-            text = if (loginState is AuthViewModel.LoginState.Loading) "登录中..." else "登录",
+            text = when {
+                loginState is AuthViewModel.LoginState.Loading -> "登录中..."
+                connectionState !is ChatService.ConnectionState.Connected -> "连接中..."
+                else -> "登录"
+            },
             onClick = {
                 if (username.isBlank() || password.isBlank()) {
                     Toast.makeText(context, "用户名和密码不能为空", Toast.LENGTH_SHORT).show()
@@ -146,7 +174,8 @@ fun LoginScreen(
                 }
                 viewModel.login(username, password)
             },
-            enabled = loginState !is AuthViewModel.LoginState.Loading,
+            enabled = connectionState is ChatService.ConnectionState.Connected &&
+                    loginState !is AuthViewModel.LoginState.Loading,
             modifier = Modifier.padding(bottom = 16.dp)
         )
 

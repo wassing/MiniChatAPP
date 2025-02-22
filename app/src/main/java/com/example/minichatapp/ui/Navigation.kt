@@ -2,11 +2,9 @@ package com.example.minichatapp.ui
 
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.*
 import androidx.navigation.compose.*
-import com.example.minichatapp.ui.navigation.BottomNavItem
 import com.example.minichatapp.ui.screens.MainScreen
 import com.example.minichatapp.ui.screens.auth.LoginScreen
 import com.example.minichatapp.ui.screens.auth.RegisterScreen

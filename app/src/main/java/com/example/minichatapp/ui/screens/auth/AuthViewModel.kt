@@ -7,6 +7,7 @@ import com.example.minichatapp.domain.model.User
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -21,10 +22,24 @@ class AuthViewModel @Inject constructor(
     private val _registerState = MutableStateFlow<RegisterState>(RegisterState.Initial)
     val registerState: StateFlow<RegisterState> = _registerState
 
+    // 暴露连接状态
+    val connectionState: StateFlow<ChatService.ConnectionState> = chatService.connectionState
+
+    init {
+        // 初始化时建立连接
+        chatService.initConnection()
+    }
+
     fun login(username: String, password: String) {
         viewModelScope.launch {
             _loginState.value = LoginState.Loading
             try {
+                // 确保连接已建立
+                if (chatService.connectionState.value !is ChatService.ConnectionState.Connected) {
+                    _loginState.value = LoginState.Error("未连接到服务器")
+                    return@launch
+                }
+
                 val result = chatService.login(username, password)
                 result.fold(
                     onSuccess = {
@@ -44,8 +59,21 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             _registerState.value = RegisterState.Loading
             try {
+                // 等待建立连接
+                if (chatService.connectionState.first() !is ChatService.ConnectionState.Connected) {
+                    _registerState.value = RegisterState.Error("未能连接到服务器")
+                    return@launch
+                }
+
                 val result = chatService.register(username, password)
-                _registerState.value = RegisterState.Success(User(username = username, password = password))
+                result.fold(
+                    onSuccess = {
+                        _registerState.value = RegisterState.Success(User(username = username, password = password))
+                    },
+                    onFailure = { e ->
+                        _registerState.value = RegisterState.Error(e.message ?: "注册失败")
+                    }
+                )
             } catch (e: Exception) {
                 _registerState.value = RegisterState.Error(e.message ?: "注册失败")
             }
